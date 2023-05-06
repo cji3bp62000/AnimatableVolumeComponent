@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:Label tabindex="-1" text="Animatable Volume Component Wizard" display-tooltip-when-elided="true" name="Title" style="font-size: 20px; -unity-font-style: bold; margin-bottom: 12px; margin-left: 3px; margin-right: 3px; margin-top: 6px; white-space: normal;" />
+    <ui:Label tabindex="-1" text="This wizard analyzes the codebase, shows found VolumeComponent and corresponding AnimatableVolumeComponent.&#10;Select the VolumeComponent and click &lt;b&gt;[Generate]&lt;/b&gt;, and the wizard will automatically create AnimatableVolumeComponent for selected VolumeComponent." display-tooltip-when-elided="true" name="Description" style="margin-left: 3px; margin-right: 3px; white-space: normal; -unity-paragraph-spacing: 25px; font-size: 13px; max-width: 600px;" />
+    <ui:VisualElement name="Space" style="background-color: rgba(0, 0, 0, 0); height: 10px;" />
+    <ui:Button text="Select Not Generated" display-tooltip-when-elided="true" name="SelectNotGeneratedButton" style="max-width: 160px; margin-top: 6px; margin-bottom: 6px;" />
+    <ui:ScrollView>
+        <ui:VisualElement name="ListParent" style="flex-grow: 0; background-color: rgb(94, 76, 76); border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; border-left-color: rgb(43, 43, 43); border-right-color: rgb(43, 43, 43); border-top-color: rgb(43, 43, 43); border-bottom-color: rgb(43, 43, 43);">
+            <ui:VisualElement name="ColumnHeader" style="flex-direction: row; height: 18px; border-bottom-width: 1px; border-left-color: rgb(55, 55, 55); border-right-color: rgb(55, 55, 55); border-top-color: rgb(55, 55, 55); border-bottom-color: rgb(55, 55, 55);">
+                <ui:VisualElement style="width: 16px; min-width: 16px; max-width: 16px; margin-left: 3px; margin-right: 3px; margin-top: 0; margin-bottom: 0;" />
+                <ui:Label text="Volume Component" display-tooltip-when-elided="true" style="width: 200px; flex-shrink: 1; -unity-text-align: middle-left; border-left-color: rgb(56, 56, 56); border-left-width: 1px; padding-left: 3px;" />
+                <ui:VisualElement style="width: 22px; min-width: 22px; max-width: 22px; border-left-width: 1px; border-left-color: rgb(56, 56, 56);" />
+                <ui:Label text="Animatable Component" display-tooltip-when-elided="true" style="width: 200px; flex-shrink: 1; -unity-text-align: middle-left; border-left-color: rgb(56, 56, 56); border-left-width: 1px; padding-left: 3px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:ScrollView>
+    <ui:Button text="Generate Animatable Component" display-tooltip-when-elided="true" name="GenerateButton" style="max-width: 240px; align-self: flex-end; margin-top: 6px; margin-bottom: 6px; margin-right: 6px;" />
+</ui:UXML>
