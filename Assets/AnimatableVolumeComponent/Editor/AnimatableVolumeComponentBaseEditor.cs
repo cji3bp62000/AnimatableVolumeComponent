@@ -18,8 +18,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             EditorGUI.BeginChangeCheck();
             serializedObject.UpdateIfRequiredOrScript();
             SerializedProperty iterator = serializedObject.GetIterator();
-            for (bool enterChildren = true; iterator.NextVisible(enterChildren); enterChildren = false)
-            {
+            // a VolumeComponent-like editor
+            // this editor maybe not be good for customizing...
+            for (bool enterChildren = true; iterator.NextVisible(enterChildren); enterChildren = false) {
                 using (new EditorGUI.DisabledScope("m_Script" == iterator.propertyPath)) {
                     if (iterator.propertyPath.StartsWith("override_") &&
                         iterator.propertyType == SerializedPropertyType.Boolean) {
@@ -43,7 +44,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                         iterator.boolValue = EditorGUILayout.ToggleLeft(iterator.displayName, iterator.boolValue);
                     }
                     else if (!showedProperties.Contains(iterator.propertyPath)) {
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.Space(16, false);
                         EditorGUILayout.PropertyField(iterator, true);
+                        EditorGUILayout.EndHorizontal();
+                        EditorGUILayout.Space(EditorGUIUtility.standardVerticalSpacing);
                     }
                 }
             }
