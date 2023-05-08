@@ -51,7 +51,10 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         {
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             var volumeComponents = assemblies.SelectMany(assembly => assembly.GetTypes()
-                    .Where(myType => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(VolumeComponent))))
+                    .Where(myType => myType.IsClass
+                        && !myType.IsAbstract
+                        && myType.IsSubclassOf(typeof(VolumeComponent))
+                        && (myType.IsPublic || myType.Assembly.FullName == "Assembly-CSharp")))
                 .ToList();
 
             volumeComponentInfoList.AddRange(volumeComponents.Select(vc => new VolumeComponentInfoItem(vc)));
