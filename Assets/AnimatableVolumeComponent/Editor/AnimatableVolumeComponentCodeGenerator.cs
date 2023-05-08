@@ -13,15 +13,18 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         {
             public Type fieldType;
             public Type valueType;
+            // may also be property name, but I will just call it field name
             public string volumeComponentFieldName;
             public string helperFieldName;
+
+            public bool isVolumeComponentProperty;
         }
 
         public static void GenerateVolumeComponentHelperCode(Type type)
         {
             var vcType = typeof(VolumeComponent);
             if (!vcType.IsAssignableFrom(type)) {
-                Debug.LogError($"{type.Name} did not inherit from {vcType.Name}!");
+                Debug.LogError($"{type.Name} does not inherit from {vcType.Name}!");
                 return;
             }
 
@@ -34,6 +37,17 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             var readMethodCode = "";
             var writeMethodCode = "";
             foreach (var fieldInfo in fieldInfoList) {
+                if (fieldInfo.isVolumeComponentProperty) {
+                    // property only; we can't set the override value
+                    fieldDeclareCode += $"{fieldIndent}public {GetFullName(fieldInfo.valueType)} {fieldInfo.helperFieldName};\n";
+                    // strip the ".value" part
+                    readMethodCode +=
+                        $"{methodIndent}{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName};\n";
+                    writeMethodCode +=
+                        $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName} = {fieldInfo.helperFieldName};\n";
+                    continue;
+                }
+
                 // フィールド定義
                 fieldDeclareCode += $"{fieldIndent}public bool override_{fieldInfo.helperFieldName};\n";
                 fieldDeclareCode += $"{fieldIndent}public {GetFullName(fieldInfo.valueType)} {fieldInfo.helperFieldName};\n";
@@ -129,9 +143,13 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         /// <param name="parameterFieldList"></param>
         private static void FindParameters(Type targetVolumeComponentType, ref List<VolumeParameterFieldInfo> parameterFieldList)
         {
+            // also search for NonPublic fields; if there is corresponding public property, we can use it
             var fields = targetVolumeComponentType
                 .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 .OrderBy(t => t.MetadataToken); // Guaranteed order
+            var properties = targetVolumeComponentType
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .ToArray();
 
             foreach (var field in fields) {
                 if (!field.FieldType.IsSubclassOf(typeof(VolumeParameter))) continue;
@@ -139,12 +157,23 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 if (field.GetCustomAttribute<ObsoleteAttribute>() != null) continue;
 
                 var parameterValueType = GetVolumeParameterValueType(field.FieldType);
+                var volumeComponentMemberName = field.Name;
+                if (field.IsPublic == false) {
+                    if (TryFindCorrespondingProperty(field, parameterValueType, properties, out var property)) {
+                        volumeComponentMemberName = property.Name;
+                    }
+                    else {
+                        // field not public and no corresponding property found; we can't access it
+                        continue;
+                    }
+                }
                 parameterFieldList.Add(new VolumeParameterFieldInfo()
                 {
                     fieldType = field.FieldType,
                     valueType = parameterValueType,
-                    volumeComponentFieldName = field.Name,
+                    volumeComponentFieldName = volumeComponentMemberName,
                     helperFieldName = field.Name,
+                    isVolumeComponentProperty = !field.IsPublic,
                 });
             }
         }
@@ -159,6 +188,36 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 }
             }
             return directChildType.GetGenericArguments()[0];
+        }
+
+        /// <summary>
+        /// If there is corresponding public property of field, return it.
+        /// We can't precisely know if there is a corresponding property, so the result may be wrong. <br/>
+        /// This check is mainly for HDRP default VolumeComponents that have private Parameter fields but corresponding
+        /// public Properties.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <param name="fieldParameterValueType"></param>
+        /// <param name="properties"></param>
+        /// <param name="correspondingProperty"></param>
+        /// <returns></returns>
+        private static bool TryFindCorrespondingProperty(
+            FieldInfo field,
+            Type fieldParameterValueType,
+            PropertyInfo[] properties,
+            out PropertyInfo correspondingProperty)
+        {
+            correspondingProperty = null;
+            var lowerCaseFieldName = field.Name.ToLower();
+            foreach (var property in properties) {
+                if (property.PropertyType != fieldParameterValueType) continue;
+                var checkName = "m_" + property.Name.ToLower();
+                if (lowerCaseFieldName == checkName) {
+                    correspondingProperty = property;
+                    return true;
+                }
+            }
+            return false;
         }
 
         public static void GenerateMapCode(Dictionary<Type, Type> map)
