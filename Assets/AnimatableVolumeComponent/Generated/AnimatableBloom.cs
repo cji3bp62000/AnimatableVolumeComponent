@@ -7,8 +7,6 @@ using UnityEngine.Rendering;
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
     [AnimatableOf(typeof(UnityEngine.Rendering.Universal.Bloom))]
-    [ExecuteAlways]
-    [RequireComponent(typeof(Volume)), RequireComponent(typeof(VolumeHelper))]
     [DisallowMultipleComponent]
     public class AnimatableBloom : AnimatableVolumeComponentBase
     {
@@ -94,21 +92,18 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             ReadFromVolumeComponent(volumeComponent);
         }
 
-        private void OnValidate()
-        {
-            WriteToVolumeComponent();
-        }
-
-        private void OnDidApplyAnimationProperties()
-        {
-            WriteToVolumeComponent();
-        }
-
-        public override void WriteToVolumeComponent()
+        public override void WriteToVolumeComponentAndRead()
         {
             if (!volumeHelper.TryGet<UnityEngine.Rendering.Universal.Bloom>(out var volumeComponent)) return;
 
             WriteToVolumeComponent(volumeComponent);
+            ReadFromVolumeComponent(volumeComponent);
+        }
+
+        public override void ReadFromVolumeComponent()
+        {
+            if (!volumeHelper.TryGet<UnityEngine.Rendering.Universal.Bloom>(out var volumeComponent)) return;
+
             ReadFromVolumeComponent(volumeComponent);
         }
     }

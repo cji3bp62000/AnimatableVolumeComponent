@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
@@ -13,7 +14,24 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         private HashSet<string> showedProperties = new();
 
+        private AnimatableVolumeComponentBase avc;
+        private Volume volume;
+        private VolumeHelper volumeHelper;
+
+        private void OnEnable()
+        {
+            avc = target as AnimatableVolumeComponentBase;
+            volume = avc.GetComponent<Volume>();
+            volumeHelper = avc.GetComponent<VolumeHelper>();
+        }
+
         public override void OnInspectorGUI()
+        {
+            ShowProperties();
+            SyncVolumeComponentValues();
+        }
+
+        private void ShowProperties()
         {
             EditorGUI.BeginChangeCheck();
             serializedObject.UpdateIfRequiredOrScript();
@@ -21,35 +39,50 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             // a VolumeComponent-like editor
             // this editor maybe not be good for customizing...
             for (bool enterChildren = true; iterator.NextVisible(enterChildren); enterChildren = false) {
-                using (new EditorGUI.DisabledScope("m_Script" == iterator.propertyPath)) {
-                    if (iterator.propertyPath.StartsWith("override_") &&
-                        iterator.propertyType == SerializedPropertyType.Boolean) {
-                        EditorGUILayout.BeginHorizontal();
-                        EditorGUILayout.PropertyField(iterator, EmptyLabel, CheckboxOptions);
-                        var fieldName = iterator.propertyPath.Substring("override_".Length);
-                        EditorGUILayout.PropertyField(serializedObject.FindProperty(fieldName), true);
-                        EditorGUILayout.EndHorizontal();
-
-                        showedProperties.Add(fieldName);
-                    }
-                    else if (iterator.propertyPath == "active") {
-                        EditorGUILayout.Space(5);
-                        EditorGUILayout.LabelField("Volume Component Properties", EditorStyles.boldLabel);
-                        iterator.boolValue = EditorGUILayout.ToggleLeft(iterator.displayName, iterator.boolValue);
-                        EditorGUILayout.Space(5);
-                    }
-                    else if (iterator.propertyPath == "writeValuesOnLateUpdate") {
-                        EditorGUILayout.Space(5);
-                        EditorGUILayout.LabelField("Settings", EditorStyles.boldLabel);
-                        iterator.boolValue = EditorGUILayout.ToggleLeft(iterator.displayName, iterator.boolValue);
-                    }
-                    else if (!showedProperties.Contains(iterator.propertyPath)) {
-                        EditorGUILayout.BeginHorizontal();
-                        EditorGUILayout.Space(16, false);
+                if (iterator.propertyPath == "m_Script") {
+                    using (new EditorGUI.DisabledScope("m_Script" == iterator.propertyPath)) {
                         EditorGUILayout.PropertyField(iterator, true);
-                        EditorGUILayout.EndHorizontal();
-                        EditorGUILayout.Space(EditorGUIUtility.standardVerticalSpacing);
                     }
+
+                    string status = "";
+                    if (!volume.HasInstantiatedProfile()) {
+                        status = "No Runtime Profile";
+                    }
+                    else {
+                        status = volumeHelper.editorSyncProfileToAnimatable ? "Reading from Profile" : "Writing to Profile";
+                    }
+                    EditorGUILayout.LabelField($"Status:  {status}");
+                    EditorGUILayout.Space(5);
+                }
+                else if (iterator.propertyPath.StartsWith("override_")
+                    && iterator.propertyType == SerializedPropertyType.Boolean) {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.PropertyField(iterator, EmptyLabel, CheckboxOptions);
+                    var fieldName = iterator.propertyPath.Substring("override_".Length);
+                    var fieldSP = serializedObject.FindProperty(fieldName);
+                    // there's a chance that Parameter is overridable but not animatable
+                    if (fieldSP != null) {
+                        if (fieldSP.hasVisibleChildren) {
+                            EditorGUILayout.Space(8f, expand:false);
+                        }
+                        EditorGUILayout.PropertyField(fieldSP, true);
+                    }
+                    else {
+                        var niceFieldName = ObjectNames.NicifyVariableName(fieldName);
+                        EditorGUILayout.LabelField(niceFieldName, "(value is not animatable)");
+                    }
+                    EditorGUILayout.EndHorizontal();
+
+                    showedProperties.Add(fieldName);
+                }
+                else if (iterator.propertyPath == "active") {
+                    EditorGUILayout.LabelField("Volume Parameters", EditorStyles.boldLabel);
+                    iterator.boolValue = EditorGUILayout.ToggleLeft(iterator.displayName, iterator.boolValue);
+                    EditorGUILayout.Space(5);
+                }
+
+                else if (!showedProperties.Contains(iterator.propertyPath)) {
+                    EditorGUILayout.PropertyField(iterator, true);
                 }
             }
 
@@ -58,6 +91,16 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             }
 
             showedProperties.Clear();
+        }
+
+        private void SyncVolumeComponentValues()
+        {
+            if (!volumeHelper.editorSyncProfileToAnimatable) return;
+            if (!avc) return;
+
+            Undo.RecordObject(target, "");
+            avc.ReadFromVolumeComponent();
+            PrefabUtility.RecordPrefabInstancePropertyModifications(target);
         }
     }
 }
