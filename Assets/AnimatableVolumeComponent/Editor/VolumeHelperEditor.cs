@@ -36,6 +36,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             volumeHelper.GetComponents(animatableVolumeComponentList);
         }
 
+        private void OnEnable()
+        {
+            volumeHelper.EditorForceRefreshRuntimeVolumeComponentDic();
+        }
+
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();

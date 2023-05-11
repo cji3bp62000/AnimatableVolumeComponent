@@ -4,7 +4,7 @@ using UnityEngine.Rendering;
 
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
-    //[ExecuteAlways]
+    [ExecuteAlways]
     [RequireComponent(typeof(Volume)), RequireComponent(typeof(VolumeHelper))]
     public abstract class AnimatableVolumeComponentBase : MonoBehaviour
     {
@@ -24,8 +24,8 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         protected virtual void LateUpdate()
         {
 #if UNITY_EDITOR
-            // stop writing only when reading from profile
-            // if (volumeHelper.editorSyncProfileToAnimatable) return;
+            // stop writing, only when reading from profile
+            if (volumeHelper.editorSyncProfileToAnimatable) return;
 #endif
 
             WriteToVolumeComponentAndRead();
@@ -33,6 +33,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         private void OnValidate()
         {
+            // if no runtime profile, create one
             volumeHelper.CreateRuntimeProfile();
             WriteToVolumeComponentAndRead();
         }

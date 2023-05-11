@@ -17,7 +17,6 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         }
         private Volume _cachedVolume;
 
-        private VolumeProfile runtimeProfile;
         private Dictionary<Type, VolumeComponent> runtimeVolumeComponentDic = new();
 
         public bool TryGet<T>(out T volumeComponent) where T : VolumeComponent
@@ -37,14 +36,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         public void CreateRuntimeProfile()
         {
-            if (volume.HasInstantiatedProfile() && runtimeProfile == volume.profile) return;
+            if (volume.HasInstantiatedProfile()) return;
 
-            // in editor mode, sometimes runtimeProfile will hold last profile after code compiling
-            if (runtimeProfile) {
-                DestroyImmediate(runtimeProfile);
-            }
-
-            runtimeProfile = volume.profile;
+            var runtimeProfile = volume.profile;
             runtimeVolumeComponentDic.Clear();
             foreach (var volumeComponent in runtimeProfile.components) {
                 runtimeVolumeComponentDic[volumeComponent.GetType()] = volumeComponent;
@@ -55,10 +49,10 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         {
             if (!volume.HasInstantiatedProfile()) return;
 
+            var runtimeProfile = volume.profile;
             volume.profile = null;
             DestroyImmediate(runtimeProfile);
             runtimeVolumeComponentDic.Clear();
-            runtimeProfile = null;
         }
 
         public void AddCorrespondingComponent()
@@ -81,12 +75,23 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
 
     /// <summary>
-    /// parts only for inspector editing
+    /// Things only for inspector editing. These should not be used in runtime code
     /// </summary>
 #if UNITY_EDITOR
     public partial class VolumeHelper
     {
         [NonSerialized] public bool editorSyncProfileToAnimatable;
+
+        public void EditorForceRefreshRuntimeVolumeComponentDic()
+        {
+            runtimeVolumeComponentDic.Clear();
+            if (!volume.HasInstantiatedProfile()) return;
+
+            var runtimeProfile = volume.profile;
+            foreach (var volumeComponent in runtimeProfile.components) {
+                runtimeVolumeComponentDic[volumeComponent.GetType()] = volumeComponent;
+            }
+        }
     }
 #endif
 
