@@ -62,7 +62,10 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                     var fieldSP = serializedObject.FindProperty(fieldName);
                     // there's a chance that Parameter is overridable but not animatable
                     if (fieldSP != null) {
-                        EditorGUILayout.PropertyField(serializedObject.FindProperty(fieldName), true);
+                        if (fieldSP.hasVisibleChildren) {
+                            EditorGUILayout.Space(8f, expand:false);
+                        }
+                        EditorGUILayout.PropertyField(fieldSP, true);
                     }
                     else {
                         var niceFieldName = ObjectNames.NicifyVariableName(fieldName);
