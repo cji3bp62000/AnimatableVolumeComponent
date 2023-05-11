@@ -7,29 +7,19 @@ using UnityEngine.Rendering;
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
     [AnimatableOf(typeof(UnityEngine.Rendering.Universal.ColorCurves))]
-    [ExecuteAlways]
-    [RequireComponent(typeof(Volume)), RequireComponent(typeof(VolumeHelper))]
     [DisallowMultipleComponent]
     public class AnimatableColorCurves : AnimatableVolumeComponentBase
     {
         public override Type TargetType { get; } = typeof(UnityEngine.Rendering.Universal.ColorCurves);
 
         public bool override_master;
-        public UnityEngine.Rendering.TextureCurve master;
         public bool override_red;
-        public UnityEngine.Rendering.TextureCurve red;
         public bool override_green;
-        public UnityEngine.Rendering.TextureCurve green;
         public bool override_blue;
-        public UnityEngine.Rendering.TextureCurve blue;
         public bool override_hueVsHue;
-        public UnityEngine.Rendering.TextureCurve hueVsHue;
         public bool override_hueVsSat;
-        public UnityEngine.Rendering.TextureCurve hueVsSat;
         public bool override_satVsSat;
-        public UnityEngine.Rendering.TextureCurve satVsSat;
         public bool override_lumVsSat;
-        public UnityEngine.Rendering.TextureCurve lumVsSat;
 
 
         private void WriteToVolumeComponent(UnityEngine.Rendering.Universal.ColorCurves volumeComponent)
@@ -38,21 +28,13 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
             volumeComponent.active = active;
             volumeComponent.master.overrideState = override_master;
-            volumeComponent.master.value = master;
             volumeComponent.red.overrideState = override_red;
-            volumeComponent.red.value = red;
             volumeComponent.green.overrideState = override_green;
-            volumeComponent.green.value = green;
             volumeComponent.blue.overrideState = override_blue;
-            volumeComponent.blue.value = blue;
             volumeComponent.hueVsHue.overrideState = override_hueVsHue;
-            volumeComponent.hueVsHue.value = hueVsHue;
             volumeComponent.hueVsSat.overrideState = override_hueVsSat;
-            volumeComponent.hueVsSat.value = hueVsSat;
             volumeComponent.satVsSat.overrideState = override_satVsSat;
-            volumeComponent.satVsSat.value = satVsSat;
             volumeComponent.lumVsSat.overrideState = override_lumVsSat;
-            volumeComponent.lumVsSat.value = lumVsSat;
 
         }
 
@@ -62,21 +44,13 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
             active = volumeComponent.active;
             override_master = volumeComponent.master.overrideState;
-            master = volumeComponent.master.value;
             override_red = volumeComponent.red.overrideState;
-            red = volumeComponent.red.value;
             override_green = volumeComponent.green.overrideState;
-            green = volumeComponent.green.value;
             override_blue = volumeComponent.blue.overrideState;
-            blue = volumeComponent.blue.value;
             override_hueVsHue = volumeComponent.hueVsHue.overrideState;
-            hueVsHue = volumeComponent.hueVsHue.value;
             override_hueVsSat = volumeComponent.hueVsSat.overrideState;
-            hueVsSat = volumeComponent.hueVsSat.value;
             override_satVsSat = volumeComponent.satVsSat.overrideState;
-            satVsSat = volumeComponent.satVsSat.value;
             override_lumVsSat = volumeComponent.lumVsSat.overrideState;
-            lumVsSat = volumeComponent.lumVsSat.value;
 
         }
 
@@ -88,21 +62,18 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             ReadFromVolumeComponent(volumeComponent);
         }
 
-        private void OnValidate()
-        {
-            WriteToVolumeComponent();
-        }
-
-        private void OnDidApplyAnimationProperties()
-        {
-            WriteToVolumeComponent();
-        }
-
-        public override void WriteToVolumeComponent()
+        public override void WriteToVolumeComponentAndRead()
         {
             if (!volumeHelper.TryGet<UnityEngine.Rendering.Universal.ColorCurves>(out var volumeComponent)) return;
 
             WriteToVolumeComponent(volumeComponent);
+            ReadFromVolumeComponent(volumeComponent);
+        }
+
+        public override void ReadFromVolumeComponent()
+        {
+            if (!volumeHelper.TryGet<UnityEngine.Rendering.Universal.ColorCurves>(out var volumeComponent)) return;
+
             ReadFromVolumeComponent(volumeComponent);
         }
     }

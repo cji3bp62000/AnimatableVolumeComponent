@@ -7,8 +7,6 @@ using UnityEngine.Rendering;
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
     [AnimatableOf(typeof(UnityEngine.Rendering.Universal.Vignette))]
-    [ExecuteAlways]
-    [RequireComponent(typeof(Volume)), RequireComponent(typeof(VolumeHelper))]
     [DisallowMultipleComponent]
     public class AnimatableVignette : AnimatableVolumeComponentBase
     {
@@ -70,21 +68,18 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             ReadFromVolumeComponent(volumeComponent);
         }
 
-        private void OnValidate()
-        {
-            WriteToVolumeComponent();
-        }
-
-        private void OnDidApplyAnimationProperties()
-        {
-            WriteToVolumeComponent();
-        }
-
-        public override void WriteToVolumeComponent()
+        public override void WriteToVolumeComponentAndRead()
         {
             if (!volumeHelper.TryGet<UnityEngine.Rendering.Universal.Vignette>(out var volumeComponent)) return;
 
             WriteToVolumeComponent(volumeComponent);
+            ReadFromVolumeComponent(volumeComponent);
+        }
+
+        public override void ReadFromVolumeComponent()
+        {
+            if (!volumeHelper.TryGet<UnityEngine.Rendering.Universal.Vignette>(out var volumeComponent)) return;
+
             ReadFromVolumeComponent(volumeComponent);
         }
     }
