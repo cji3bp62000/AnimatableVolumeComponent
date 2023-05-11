@@ -18,12 +18,10 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         private List<Type> tempVCList = new();
 
-        public static bool SyncProfileToAnimatable;
-
-        private static GUIContent SyncButtonContent
+        private GUIContent SyncButtonContent
         {
             get {
-                return SyncProfileToAnimatable ? SyncButtonContentOn : SyncButtonContentOff;
+                return volumeHelper.editorSyncProfileToAnimatable ? SyncButtonContentOn : SyncButtonContentOff;
             }
         }
 
@@ -46,6 +44,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             DrawMissingAnimatableComponent();
         }
 
+        private void OnDisable()
+        {
+            volumeHelper.editorSyncProfileToAnimatable = false;
+        }
+
         private void DrawRuntimeProfileSettings()
         {
             var hasRuntimeProfile = targetVolume.HasInstantiatedProfile();
@@ -57,26 +60,29 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             if (hasRuntimeProfile) {
                 GUI.color = RuntimeProfileColor;
                 if (GUILayout.Button("Clear Runtime Profile")) {
-                    var runtimeProfile = targetVolume.profile;
-                    targetVolume.profile = null;
-                    DestroyImmediate(runtimeProfile);
+                    volumeHelper.ClearRuntimeProfile();
 
-                    SyncProfileToAnimatable = false;
+                    volumeHelper.editorSyncProfileToAnimatable = false;
                 }
                 GUI.color = Color.white;
 
                 InitializeSyncButtonGUI();
 
-                if (SyncProfileToAnimatable) {
-                    GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f);
-                }
-                if (GUILayout.Button(SyncButtonContent)) {
-                    SyncProfileToAnimatable = !SyncProfileToAnimatable;
+                EditorGUILayout.Space(5);
+                using (new EditorGUILayout.HorizontalScope()) {
+                    var status = volumeHelper.editorSyncProfileToAnimatable ? "Reading from Profile" : "Writing to Profile";
+                    GUILayout.Label($"Status:  {status}");
+                    if (volumeHelper.editorSyncProfileToAnimatable) {
+                        GUI.backgroundColor = new Color(0.75f, 0.75f, 0.75f);
+                    }
+                    if (GUILayout.Button(SyncButtonContent)) {
+                        volumeHelper.editorSyncProfileToAnimatable = !volumeHelper.editorSyncProfileToAnimatable;
+                    }
                 }
             }
             else {
-                if (GUILayout.Button("Create Duplicated Runtime Profile")) {
-                    var runtimeProfile = targetVolume.profile;
+                if (GUILayout.Button("Create Runtime Profile")) {
+                    volumeHelper.CreateRuntimeProfile();
                 }
             }
 
@@ -120,9 +126,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         {
             if (SyncButtonContent != null) return;
 
-            SyncButtonContentOff = new GUIContent("Sync Profile Value to Animatable Components");
+            SyncButtonContentOff = new GUIContent("Read from Profile");
             SyncButtonContentOn = EditorGUIUtility.IconContent("Animation.Record");
-            SyncButtonContentOn.text = " Syncing...";
+            SyncButtonContentOn.text = " Reading...";
         }
     }
 }

@@ -118,8 +118,8 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             AssetDatabase.Refresh();
 
             Debug.Log("Generate done!");
-            EditorPrefs.SetBool(RefreshMappingCodeKey, true);
             RefreshMappingCode();
+            EditorPrefs.SetBool(RefreshMappingCodeKey, true);
 
             foreach (var item in volumeComponentInfoList) {
                 item.SetIsChecked(false);

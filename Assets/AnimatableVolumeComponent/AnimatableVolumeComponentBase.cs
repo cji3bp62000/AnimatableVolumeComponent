@@ -1,13 +1,14 @@
 using System;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
+    //[ExecuteAlways]
+    [RequireComponent(typeof(Volume)), RequireComponent(typeof(VolumeHelper))]
     public abstract class AnimatableVolumeComponentBase : MonoBehaviour
     {
         public abstract Type TargetType { get; }
-        [Header("Settings")]
-        public bool writeValuesOnLateUpdate;
 
         public bool active;
 
@@ -22,12 +23,21 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         protected virtual void LateUpdate()
         {
-            if (!Application.isPlaying) return;
-            if (writeValuesOnLateUpdate) {
-                WriteToVolumeComponent();
-            }
+#if UNITY_EDITOR
+            // stop writing only when reading from profile
+            // if (volumeHelper.editorSyncProfileToAnimatable) return;
+#endif
+
+            WriteToVolumeComponentAndRead();
         }
 
-        public abstract void WriteToVolumeComponent();
+        private void OnValidate()
+        {
+            volumeHelper.CreateRuntimeProfile();
+            WriteToVolumeComponentAndRead();
+        }
+
+        public abstract void WriteToVolumeComponentAndRead();
+        public abstract void ReadFromVolumeComponent();
     }
 }

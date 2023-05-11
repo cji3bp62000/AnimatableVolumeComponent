@@ -18,7 +18,16 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             public string helperFieldName;
 
             public bool isVolumeComponentProperty;
+            public bool isNonAnimatableType;
         }
+
+        /// <summary>
+        /// Types that can't be animated (due to technical limitations)
+        /// </summary>
+        private static readonly string[] NonAnimatableTypeNames = new[]
+        {
+            "TextureCurve",
+        };
 
         public static void GenerateVolumeComponentHelperCode(Type type)
         {
@@ -37,6 +46,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             var readMethodCode = "";
             var writeMethodCode = "";
             foreach (var fieldInfo in fieldInfoList) {
+                // code generation for special case
                 if (fieldInfo.isVolumeComponentProperty) {
                     // property only; we can't set the override value
                     fieldDeclareCode += $"{fieldIndent}public {GetFullName(fieldInfo.valueType)} {fieldInfo.helperFieldName};\n";
@@ -47,16 +57,26 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                         $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName} = {fieldInfo.helperFieldName};\n";
                     continue;
                 }
+                else if (fieldInfo.isNonAnimatableType) {
+                    // override state only; we can't set the value of non animatable types
+                    fieldDeclareCode += $"{fieldIndent}public bool override_{fieldInfo.helperFieldName};\n";
+                    readMethodCode +=
+                        $"{methodIndent}override_{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState;\n";
+                    writeMethodCode +=
+                        $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState = override_{fieldInfo.helperFieldName};\n";
+                    continue;
+                }
 
-                // フィールド定義
+                // normal code generation
+                // field definition
                 fieldDeclareCode += $"{fieldIndent}public bool override_{fieldInfo.helperFieldName};\n";
                 fieldDeclareCode += $"{fieldIndent}public {GetFullName(fieldInfo.valueType)} {fieldInfo.helperFieldName};\n";
-                // 読み込み
+                // read from profile
                 readMethodCode +=
                     $"{methodIndent}override_{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState;\n";
                 readMethodCode +=
                     $"{methodIndent}{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName}.value;\n";
-                // 書き込み
+                // write to profile
                 writeMethodCode +=
                     $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState = override_{fieldInfo.helperFieldName};\n";
                 writeMethodCode +=
@@ -74,8 +94,6 @@ using UnityEngine.Rendering;
 namespace TsukimiNeko.AnimatableVolumeComponent
 {{
     [AnimatableOf(typeof({typeFullName}))]
-    [ExecuteAlways]
-    [RequireComponent(typeof(Volume)), RequireComponent(typeof(VolumeHelper))]
     [DisallowMultipleComponent]
     public class Animatable{type.Name} : AnimatableVolumeComponentBase
     {{
@@ -107,21 +125,18 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             ReadFromVolumeComponent(volumeComponent);
         }}
 
-        private void OnValidate()
-        {{
-            WriteToVolumeComponent();
-        }}
-
-        private void OnDidApplyAnimationProperties()
-        {{
-            WriteToVolumeComponent();
-        }}
-
-        public override void WriteToVolumeComponent()
+        public override void WriteToVolumeComponentAndRead()
         {{
             if (!volumeHelper.TryGet<{typeFullName}>(out var volumeComponent)) return;
 
             WriteToVolumeComponent(volumeComponent);
+            ReadFromVolumeComponent(volumeComponent);
+        }}
+
+        public override void ReadFromVolumeComponent()
+        {{
+            if (!volumeHelper.TryGet<{typeFullName}>(out var volumeComponent)) return;
+
             ReadFromVolumeComponent(volumeComponent);
         }}
     }}
@@ -174,6 +189,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                     volumeComponentFieldName = volumeComponentMemberName,
                     helperFieldName = field.Name,
                     isVolumeComponentProperty = !field.IsPublic,
+                    isNonAnimatableType = NonAnimatableTypeNames.Contains(parameterValueType.Name),
                 });
             }
         }

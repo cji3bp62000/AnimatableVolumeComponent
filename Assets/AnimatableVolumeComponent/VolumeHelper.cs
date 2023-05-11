@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -10,20 +11,54 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         private Volume volume
         {
             get {
-#pragma warning disable 618
                 if (!_cachedVolume) _cachedVolume = GetComponent<Volume>();
                 return _cachedVolume;
-#pragma warning restore 618
             }
         }
-        [Obsolete("use volume.")] private Volume _cachedVolume;
+        private Volume _cachedVolume;
+
+        private VolumeProfile runtimeProfile;
+        private Dictionary<Type, VolumeComponent> runtimeVolumeComponentDic = new();
 
         public bool TryGet<T>(out T volumeComponent) where T : VolumeComponent
         {
-            volumeComponent = default;
-            if (!volume || !volume.profile || !volume.profile.TryGet<T>(out volumeComponent)) return false;
+            var hasValue = runtimeVolumeComponentDic.TryGetValue(typeof(T), out var vc);
+            volumeComponent = vc as T;
+            return hasValue;
+        }
 
-            return true;
+        private void Start()
+        {
+            if (!Application.isPlaying) return;
+
+            ClearRuntimeProfile();
+            CreateRuntimeProfile();
+        }
+
+        public void CreateRuntimeProfile()
+        {
+            if (volume.HasInstantiatedProfile() && runtimeProfile == volume.profile) return;
+
+            // in editor mode, sometimes runtimeProfile will hold last profile after code compiling
+            if (runtimeProfile) {
+                DestroyImmediate(runtimeProfile);
+            }
+
+            runtimeProfile = volume.profile;
+            runtimeVolumeComponentDic.Clear();
+            foreach (var volumeComponent in runtimeProfile.components) {
+                runtimeVolumeComponentDic[volumeComponent.GetType()] = volumeComponent;
+            }
+        }
+
+        public void ClearRuntimeProfile()
+        {
+            if (!volume.HasInstantiatedProfile()) return;
+
+            volume.profile = null;
+            DestroyImmediate(runtimeProfile);
+            runtimeVolumeComponentDic.Clear();
+            runtimeProfile = null;
         }
 
         public void AddCorrespondingComponent()
@@ -40,11 +75,19 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         private void OnDestroy()
         {
-            if (volume && volume.HasInstantiatedProfile()) {
-                var runtimeProfile = volume.profile;
-                volume.profile = null;
-                DestroyImmediate(runtimeProfile);
-            }
+            ClearRuntimeProfile();
         }
     }
+
+
+    /// <summary>
+    /// parts only for inspector editing
+    /// </summary>
+#if UNITY_EDITOR
+    public partial class VolumeHelper
+    {
+        [NonSerialized] public bool editorSyncProfileToAnimatable;
+    }
+#endif
+
 }
