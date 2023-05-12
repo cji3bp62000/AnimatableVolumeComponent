@@ -30,6 +30,8 @@ namespace TsukimiNeko.AnimatableVolumeComponent.Internal
         private static void NavigateOnFirstImport()
         {
             var settings = GetOrCreateSettings();
+            if (!settings) return;
+
             if (settings.isFirstImport) {
                 settings.isFirstImport = false;
                 AssetDatabase.SaveAssetIfDirty(settings);
