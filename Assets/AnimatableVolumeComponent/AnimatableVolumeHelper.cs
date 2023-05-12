@@ -6,7 +6,7 @@ using UnityEngine.Rendering;
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
     [RequireComponent(typeof(Volume))]
-    public partial class VolumeHelper : MonoBehaviour
+    public partial class AnimatableVolumeHelper : MonoBehaviour
     {
         private Volume volume
         {
@@ -26,6 +26,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             return hasValue;
         }
 
+        public bool TryGet(Type volumeComponentType, out VolumeComponent volumeComponent)
+        {
+            return runtimeVolumeComponentDic.TryGetValue(volumeComponentType, out volumeComponent);
+        }
+
         private void Start()
         {
             if (!Application.isPlaying) return;
@@ -43,6 +48,16 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             foreach (var volumeComponent in runtimeProfile.components) {
                 runtimeVolumeComponentDic[volumeComponent.GetType()] = volumeComponent;
             }
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying) {
+                // in editor mode, we don't auto write to volume component at LateUpdate, so manually initialize runtime profile
+                // (other inspector operations will write to volume component by OnValidate())
+                foreach (var avc in GetComponents<AnimatableVolumeComponentBase>()) {
+                    avc.WriteToVolumeComponent();
+                }
+            }
+#endif
         }
 
         public void ClearRuntimeProfile()
@@ -78,10 +93,8 @@ namespace TsukimiNeko.AnimatableVolumeComponent
     /// Things only for inspector editing. These should not be used in runtime code
     /// </summary>
 #if UNITY_EDITOR
-    public partial class VolumeHelper
+    public partial class AnimatableVolumeHelper
     {
-        [NonSerialized] public bool editorSyncProfileToAnimatable;
-
         public void EditorForceRefreshRuntimeVolumeComponentDic()
         {
             runtimeVolumeComponentDic.Clear();

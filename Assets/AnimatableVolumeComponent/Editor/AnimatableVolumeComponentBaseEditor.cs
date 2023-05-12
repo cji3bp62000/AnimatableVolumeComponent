@@ -16,13 +16,15 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         private AnimatableVolumeComponentBase avc;
         private Volume volume;
-        private VolumeHelper volumeHelper;
+        private AnimatableVolumeHelper volumeHelper;
+
+        private int dirtyCount = 0;
 
         private void OnEnable()
         {
             avc = target as AnimatableVolumeComponentBase;
             volume = avc.GetComponent<Volume>();
-            volumeHelper = avc.GetComponent<VolumeHelper>();
+            volumeHelper = avc.GetComponent<AnimatableVolumeHelper>();
         }
 
         public override void OnInspectorGUI()
@@ -49,7 +51,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                         status = "No Runtime Profile";
                     }
                     else {
-                        status = volumeHelper.editorSyncProfileToAnimatable ? "Reading from Profile" : "Writing to Profile";
+                        status = Application.isPlaying ? "Writing to Profile" : "Reading / Writing to Profile";
                     }
                     EditorGUILayout.LabelField($"Status:  {status}");
                     EditorGUILayout.Space(5);
@@ -95,8 +97,16 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         private void SyncVolumeComponentValues()
         {
-            if (!volumeHelper.editorSyncProfileToAnimatable) return;
             if (!avc) return;
+
+            if (!volumeHelper.TryGet(avc.TargetType, out var targetVolumeComponent)) {
+                return;
+            }
+
+            // only record when volume component is modified
+            var oldDirtyCount = dirtyCount;
+            dirtyCount = EditorUtility.GetDirtyCount(targetVolumeComponent);
+            if (dirtyCount <= oldDirtyCount) return;
 
             Undo.RecordObject(target, "");
             avc.ReadFromVolumeComponent();
