@@ -24,7 +24,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         protected virtual void LateUpdate()
         {
 #if UNITY_EDITOR
-            // don't auto read in editor mode (because we may want to directly adjust profile)
+            // don't auto write in editor mode (because we may want to directly adjust profile)
             if (!Application.isPlaying) return;
 #endif
 
