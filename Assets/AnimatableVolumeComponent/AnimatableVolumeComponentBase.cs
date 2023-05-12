@@ -28,17 +28,33 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             if (volumeHelper.editorSyncProfileToAnimatable) return;
 #endif
 
-            WriteToVolumeComponentAndRead();
+            WriteToVolumeComponent();
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Animation applied/previewed callback
+        /// </summary>
+        private void OnDidApplyAnimationProperties()
+        {
+            if (Application.isPlaying) return;
+
+            // update profile when previewing animation
+            WriteToVolumeComponent();
+        }
+#endif
 
         private void OnValidate()
         {
             // if no runtime profile, create one
             volumeHelper.CreateRuntimeProfile();
-            WriteToVolumeComponentAndRead();
+            WriteToVolumeComponent();
+            // some Parameter has min/max value, so when keying / modifying in editor,
+            // we want to also clamp to Parameter's range
+            ReadFromVolumeComponent();
         }
 
-        public abstract void WriteToVolumeComponentAndRead();
+        public abstract void WriteToVolumeComponent();
         public abstract void ReadFromVolumeComponent();
     }
 }

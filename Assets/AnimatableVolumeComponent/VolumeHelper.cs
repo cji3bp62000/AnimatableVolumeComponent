@@ -26,6 +26,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             return hasValue;
         }
 
+        public bool TryGet(Type volumeComponentType, out VolumeComponent volumeComponent)
+        {
+            return runtimeVolumeComponentDic.TryGetValue(volumeComponentType, out volumeComponent);
+        }
+
         private void Start()
         {
             if (!Application.isPlaying) return;

@@ -125,12 +125,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             ReadFromVolumeComponent(volumeComponent);
         }}
 
-        public override void WriteToVolumeComponentAndRead()
+        public override void WriteToVolumeComponent()
         {{
             if (!volumeHelper.TryGet<{typeFullName}>(out var volumeComponent)) return;
 
             WriteToVolumeComponent(volumeComponent);
-            ReadFromVolumeComponent(volumeComponent);
         }}
 
         public override void ReadFromVolumeComponent()

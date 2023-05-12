@@ -18,6 +18,8 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         private Volume volume;
         private VolumeHelper volumeHelper;
 
+        private int dirtyCount = 0;
+
         private void OnEnable()
         {
             avc = target as AnimatableVolumeComponentBase;
@@ -97,6 +99,15 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         {
             if (!volumeHelper.editorSyncProfileToAnimatable) return;
             if (!avc) return;
+
+            if (!volumeHelper.TryGet(avc.TargetType, out var targetVolumeComponent)) {
+                return;
+            }
+
+            // only record when volume component is modified
+            var oldDirtyCount = dirtyCount;
+            dirtyCount = EditorUtility.GetDirtyCount(targetVolumeComponent);
+            if (dirtyCount <= oldDirtyCount) return;
 
             Undo.RecordObject(target, "");
             avc.ReadFromVolumeComponent();
