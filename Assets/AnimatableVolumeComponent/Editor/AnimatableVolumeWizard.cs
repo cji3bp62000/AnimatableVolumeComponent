@@ -93,18 +93,28 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         private void InitializeOtherUI(VisualElement treeRoot)
         {
             var selectNotGeneratedBtn = treeRoot.Q<Button>("SelectNotGeneratedButton");
-            selectNotGeneratedBtn.clicked += SelectNotGenerate;
+            selectNotGeneratedBtn.clicked += SelectNotGenerated;
+
+            var selectAllBtn = treeRoot.Q<Button>("SelectAllButton");
+            selectAllBtn.clicked += SelectAll;
 
             var generateBtn = treeRoot.Q<Button>("GenerateButton");
             generateBtn.clicked += GenerateCode;
         }
 
-        private void SelectNotGenerate()
+        private void SelectNotGenerated()
         {
             foreach (var item in volumeComponentInfoList) {
                 if (item.AnimatableComponentType == null) {
                     item.SetIsChecked(true);
                 }
+            }
+        }
+
+        private void SelectAll()
+        {
+            foreach (var item in volumeComponentInfoList) {
+                item.SetIsChecked(true);
             }
         }
 
