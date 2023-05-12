@@ -48,6 +48,16 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             foreach (var volumeComponent in runtimeProfile.components) {
                 runtimeVolumeComponentDic[volumeComponent.GetType()] = volumeComponent;
             }
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying) {
+                // in editor mode, we don't auto write to volume component at LateUpdate, so manually initialize runtime profile
+                // (other inspector operations will write to volume component by OnValidate())
+                foreach (var avc in GetComponents<AnimatableVolumeComponentBase>()) {
+                    avc.WriteToVolumeComponent();
+                }
+            }
+#endif
         }
 
         public void ClearRuntimeProfile()
@@ -85,8 +95,6 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 #if UNITY_EDITOR
     public partial class VolumeHelper
     {
-        [NonSerialized] public bool editorSyncProfileToAnimatable;
-
         public void EditorForceRefreshRuntimeVolumeComponentDic()
         {
             runtimeVolumeComponentDic.Clear();

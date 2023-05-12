@@ -51,7 +51,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                         status = "No Runtime Profile";
                     }
                     else {
-                        status = volumeHelper.editorSyncProfileToAnimatable ? "Reading from Profile" : "Writing to Profile";
+                        status = Application.isPlaying ? "Writing to Profile" : "Reading / Writing to Profile";
                     }
                     EditorGUILayout.LabelField($"Status:  {status}");
                     EditorGUILayout.Space(5);
@@ -97,7 +97,6 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         private void SyncVolumeComponentValues()
         {
-            if (!volumeHelper.editorSyncProfileToAnimatable) return;
             if (!avc) return;
 
             if (!volumeHelper.TryGet(avc.TargetType, out var targetVolumeComponent)) {

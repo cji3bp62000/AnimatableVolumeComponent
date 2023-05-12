@@ -24,8 +24,8 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         protected virtual void LateUpdate()
         {
 #if UNITY_EDITOR
-            // stop writing, only when reading from profile
-            if (volumeHelper.editorSyncProfileToAnimatable) return;
+            // don't auto read in editor mode (because we may want to directly adjust profile)
+            if (!Application.isPlaying) return;
 #endif
 
             WriteToVolumeComponent();
