@@ -16,7 +16,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         private AnimatableVolumeComponentBase avc;
         private Volume volume;
-        private VolumeHelper volumeHelper;
+        private AnimatableVolumeHelper volumeHelper;
 
         private int dirtyCount = 0;
 
@@ -24,7 +24,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         {
             avc = target as AnimatableVolumeComponentBase;
             volume = avc.GetComponent<Volume>();
-            volumeHelper = avc.GetComponent<VolumeHelper>();
+            volumeHelper = avc.GetComponent<AnimatableVolumeHelper>();
         }
 
         public override void OnInspectorGUI()

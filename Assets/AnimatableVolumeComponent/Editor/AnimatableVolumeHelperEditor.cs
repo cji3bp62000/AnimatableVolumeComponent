@@ -3,16 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
-using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
-    [CustomEditor(typeof(VolumeHelper))]
-    public class VolumeHelperEditor : Editor
+    [CustomEditor(typeof(AnimatableVolumeHelper))]
+    public class AnimatableVolumeHelperEditor : Editor
     {
-        private VolumeHelper volumeHelper;
+        private AnimatableVolumeHelper volumeHelper;
         private Volume targetVolume;
         private List<AnimatableVolumeComponentBase> animatableVolumeComponentList = new();
 
@@ -24,7 +23,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         private void Awake()
         {
-            volumeHelper = target as VolumeHelper;
+            volumeHelper = target as AnimatableVolumeHelper;
             targetVolume = volumeHelper.GetComponent<Volume>();
             volumeHelper.GetComponents(animatableVolumeComponentList);
         }

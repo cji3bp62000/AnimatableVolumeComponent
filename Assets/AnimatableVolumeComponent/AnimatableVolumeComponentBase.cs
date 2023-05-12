@@ -5,21 +5,21 @@ using UnityEngine.Rendering;
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
     [ExecuteAlways]
-    [RequireComponent(typeof(Volume)), RequireComponent(typeof(VolumeHelper))]
+    [RequireComponent(typeof(Volume)), RequireComponent(typeof(AnimatableVolumeHelper))]
     public abstract class AnimatableVolumeComponentBase : MonoBehaviour
     {
         public abstract Type TargetType { get; }
 
         public bool active;
 
-        protected VolumeHelper volumeHelper
+        protected AnimatableVolumeHelper volumeHelper
         {
             get {
-                if (!_cachedVolumeHelper) _cachedVolumeHelper = GetComponent<VolumeHelper>();
+                if (!_cachedVolumeHelper) _cachedVolumeHelper = GetComponent<AnimatableVolumeHelper>();
                 return _cachedVolumeHelper;
             }
         }
-        private VolumeHelper _cachedVolumeHelper;
+        private AnimatableVolumeHelper _cachedVolumeHelper;
 
         protected virtual void LateUpdate()
         {

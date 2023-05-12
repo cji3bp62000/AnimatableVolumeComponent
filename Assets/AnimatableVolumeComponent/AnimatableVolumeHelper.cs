@@ -6,7 +6,7 @@ using UnityEngine.Rendering;
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
     [RequireComponent(typeof(Volume))]
-    public partial class VolumeHelper : MonoBehaviour
+    public partial class AnimatableVolumeHelper : MonoBehaviour
     {
         private Volume volume
         {
@@ -93,7 +93,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
     /// Things only for inspector editing. These should not be used in runtime code
     /// </summary>
 #if UNITY_EDITOR
-    public partial class VolumeHelper
+    public partial class AnimatableVolumeHelper
     {
         public void EditorForceRefreshRuntimeVolumeComponentDic()
         {
