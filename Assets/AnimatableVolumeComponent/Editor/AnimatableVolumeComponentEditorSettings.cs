@@ -34,7 +34,6 @@ namespace TsukimiNeko.AnimatableVolumeComponent.Internal
 
             if (settings.isFirstImport) {
                 settings.isFirstImport = false;
-                AssetDatabase.SaveAssetIfDirty(settings);
 
                 var isJapanese = Application.systemLanguage == SystemLanguage.Japanese;
                 var title = isJapanese ? Title_jp : Title_en;
