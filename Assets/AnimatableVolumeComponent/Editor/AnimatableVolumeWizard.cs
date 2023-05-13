@@ -92,14 +92,27 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         private void InitializeOtherUI(VisualElement treeRoot)
         {
+            var isJapanese = Application.systemLanguage == SystemLanguage.Japanese;
+
+            SetElementEnable(treeRoot.Q("Description"), !isJapanese);
+            SetElementEnable(treeRoot.Q("DescriptionJP"), isJapanese);
+
             var selectNotGeneratedBtn = treeRoot.Q<Button>("SelectNotGeneratedButton");
             selectNotGeneratedBtn.clicked += SelectNotGenerated;
+            selectNotGeneratedBtn.text = isJapanese ? "未生成のみ選択" : "Select Not Generated";
 
             var selectAllBtn = treeRoot.Q<Button>("SelectAllButton");
             selectAllBtn.clicked += SelectAll;
+            selectAllBtn.text = isJapanese ? "全て選択" : "Select All";
 
             var generateBtn = treeRoot.Q<Button>("GenerateButton");
             generateBtn.clicked += GenerateCode;
+            generateBtn.text = isJapanese ? "Animatable Component を生成" : "Generate Animatable Component";
+        }
+
+        private void SetElementEnable(VisualElement ve, bool isEnable)
+        {
+            ve.style.display = isEnable ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private void SelectNotGenerated()

@@ -1,8 +1,9 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <ui:Label tabindex="-1" text="Animatable Volume Component Wizard" display-tooltip-when-elided="true" name="Title" style="font-size: 20px; -unity-font-style: bold; margin-bottom: 12px; margin-left: 3px; margin-right: 3px; margin-top: 6px; white-space: normal;" />
     <ui:Label tabindex="-1" text="This wizard analyzes the codebase, shows found VolumeComponent and corresponding AnimatableVolumeComponent.&#10;Select the VolumeComponent and click &lt;b&gt;[Generate]&lt;/b&gt;, and the wizard will automatically create AnimatableVolumeComponent for selected VolumeComponent." display-tooltip-when-elided="true" name="Description" style="margin-left: 3px; margin-right: 3px; white-space: normal; -unity-paragraph-spacing: 25px; font-size: 13px; max-width: 600px;" />
+    <ui:Label tabindex="-1" text="VolumeComponent をアニメーションさせるのに必要なコンポーネントを生成します。&#10;VolumeComponent を選択し、 [生成] をクリックすると、対応する AnimatableVolumeComponent のコードを自動的に生成します。" display-tooltip-when-elided="true" name="DescriptionJP" style="margin-left: 3px; margin-right: 3px; white-space: normal; -unity-paragraph-spacing: 30px; font-size: 13px; max-width: 600px; display: none;" />
     <ui:VisualElement name="Space" style="background-color: rgba(0, 0, 0, 0); height: 10px;" />
-    <ui:VisualElement style="flex-direction: row;">
+    <ui:VisualElement style="flex-direction: row; flex-shrink: 0;">
         <ui:Button text="Select Not Generated" display-tooltip-when-elided="true" name="SelectNotGeneratedButton" style="max-width: 160px; margin-top: 6px; margin-bottom: 6px; padding-left: 15px; padding-right: 15px;" />
         <ui:Button text="Select All" display-tooltip-when-elided="true" name="SelectAllButton" style="max-width: 160px; margin-top: 6px; margin-bottom: 6px; padding-left: 20px; padding-right: 20px;" />
     </ui:VisualElement>
