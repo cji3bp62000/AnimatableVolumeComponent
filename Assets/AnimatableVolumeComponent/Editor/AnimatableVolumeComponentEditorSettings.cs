@@ -27,8 +27,16 @@ namespace TsukimiNeko.AnimatableVolumeComponent.Internal
         private const string Cancel_jp = "後で作成";
 
         [InitializeOnLoadMethod]
+        private static void Initialize()
+        {
+            // sometimes it may cause error when doing something on importing, so wait 1 frame
+            EditorApplication.update += NavigateOnFirstImport;
+        }
+
         private static void NavigateOnFirstImport()
         {
+            EditorApplication.update -= NavigateOnFirstImport;
+
             var settings = GetOrCreateSettings();
             if (!settings) return;
 
@@ -70,7 +78,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent.Internal
 
             var instance = CreateInstance<AnimatableVolumeComponentEditorSettings>();
             AssetDatabase.CreateAsset(instance, soPath);
-            AssetDatabase.SaveAssetIfDirty(instance);
+            instance = AssetDatabase.LoadAssetAtPath<AnimatableVolumeComponentEditorSettings>(soPath);
             return instance;
         }
     }
