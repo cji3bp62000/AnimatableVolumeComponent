@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1881c596a7e04274caba4469cbdf46f0, type: 3}
   m_Name: AnimatableVolumeComponentEditorSettings
   m_EditorClassIdentifier: 
-  isFirstImport: 1
+  isFirstImport: 0
