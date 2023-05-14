@@ -3,7 +3,7 @@
 **Animatable Volume Component** provides an interface for animating the URP PostProcessing Volumes. Use this component to give your game more interactive and dynamic look.
 <br/>For English README, please see look at: 👉 [README_EN.md](./README_en.md)
 
-**Animatable Volume Component** は、URP 及び HDRP のポストプロセス Volume をアニメーションさせるためのインターフェースを提供します。<br/>このコンポーネントを使用して、より臨場感のあるシーンや演出を作ることができます。
+**Animatable Volume Component** は、URP 及び HDRP のポストプロセス Volume をアニメーションさせるためのインターフェースを提供します。<br/>このパッケージを使用して、より臨場感のあるシーンや演出を作ることができます。
 
 <img src="./ReadmeImages/AnimatableVolumeComponent_Logo.png" width="750">
 
@@ -11,12 +11,12 @@
 
 # 特徴
 
-Animatable Volume Component 以下の特徴を有します：
+Animatable Volume Component 以下の特徴があります：
 
-1. `Volume Profile` に対して、いつもの操作で簡単にアニメーションのキーを打ち、再生させることが出来る
+1. 各ポストプロセスのパラメータに対して、いつもの操作で簡単にアニメーションのキーを打ち、再生させることが出来る
 2. コード分析・自動生成により、
    - Unity のバージョンごとのパラメータ変更を吸収できる
-   - カスタムな `Volume Component` に対してもアニメーションさせることができる
+   - カスタムな `VolumeComponent` に対してもアニメーションさせることができる
 3. ツール導入前後、アニメーション時以外の Volume の操作は一切変わらない
 
 <br/>
@@ -27,13 +27,17 @@ Animatable Volume Component 以下の特徴を有します：
 
 # 使い方
 
+この節では、 Animatable Volume Component を使用して、ポストプロセスの各パラメータをアニメーションさせる方法を説明します。
+
+下記の手順でアニメーションを作成します：
+
 0. （一度のみ）アニメーション用の補助コンポーネントの自動生成
 1. アニメーション用の補助コンポーネントを Volume のゲームオブジェクトにアタッチ
 2. アニメーションキーイング
 
 <br/>
 
-## 1. (下準備) 補助コンポーネントの自動生成
+## 0. (下準備) 補助コンポーネントの自動生成
 
 本コンポーネントの UnityPackage を導入後、メニューの `Tools > Animatable Volume > Animatable Volume Wizard` を選択します。下記のようなポップアップが表示されます。
 
@@ -49,7 +53,7 @@ Animatable Volume Component 以下の特徴を有します：
 
 <br/>
 
-## 2. 補助コンポーネントのアタッチ
+## 1. 補助コンポーネントのアタッチ
 
 アニメーションをさせたい `Volume` のゲームオブジェクトに、`Animator` 及び `AnimatableVolumeHelper` をアタッチします。
 
@@ -69,7 +73,7 @@ Animatable Volume Component 以下の特徴を有します：
 
 <br/>
 
-## 3. アニメーションキーイング
+## 2. アニメーションキーイング
 
 補助コンポーネントをアタッチ後、後はいつものアニメーションの付け方と同じです。
 </br>アニメーションウィンドウを開き、アニメーションさせたい時間点に、Profile の値を設定して、キーを打っていきます。
@@ -86,4 +90,21 @@ Animatable Volume Component 以下の特徴を有します：
 
 アニメーションに問題が無ければ、アニメーションをアニメーターコントローラーに組み込んで、ゲームを実行すると再生されます。
 
-#
+# 実装詳細
+
+この節では、AnimatableVolumeComponent の実装について説明します。
+
+URP 及び HDRP のポストプロセスのパラメータをアニメーションする際の難点として、パラメータを保持する VolumeProfile 及び各ポストプロセスの VolumeComponent は ScriptableObject のため、技術上 Animation でキーが打てません。
+
+これに対処するために、このパッケージは各 VolumeComponent の MonoBehaviour 版の補助コンポーネントを自動で生成します。例えば、`Bloom` を検出したら、`AnimatableBloom` という MonoBehaviour を生成します。
+
+MonoBehaviour はアニメーションができますので、MonoBehaviour にアニメーションをさせ、`LateUpdate()` 時に VolumeComponent に反映させることで、間接的に VolumeComponent のパラメータをアニメーションさせることができます。
+
+# 制限
+
+Animatable Volume Component は下記の既知の制限があります：
+
+1. AnimationCurve を始め、class のパラメータをアニメーションさせることは出来ません
+   - Unity のアニメーションシステムの制限です。カスタムポストプロセスの場合、class の代わりに struct を使用してください<br/><br/>
+2. URP 及び HDRP のポストプロセス `LiftGammaGain` のアニメーションキーを打つ時に、時々画面がチラチラすることがあります
+   - `LiftGammaGain` のエディタとの相性が悪いようです。再生時は問題ありません
