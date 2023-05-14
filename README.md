@@ -45,6 +45,7 @@ Animatable Volume Component 以下の特徴があります：
 > プロジェクト内に存在する `VolumeComponent` のリスト
 
 <br/>
+
 アニメーションさせたい `VolumeComponent` にチェックを入れ、［生成］ボタンを押して、`VolumeComponent` に対応した補助コンポーネント（`Animatable + 元のコンポーネント名`）を生成します。
 
 　![Wizard_2](./ReadmeImages/Wizard_2.png)
@@ -70,6 +71,10 @@ Animatable Volume Component 以下の特徴があります：
 補助コンポーネントはランタイムの Profile にのみ作動するので、`AnimatableVolumeHelper` の［Create Runtime Profile］を押して、Profile アセットのコピーを生成します。 （自動で生成される場合があります）
 
 　![Helper_3-all](./ReadmeImages/Helper_3-all.png)
+
+<br/>
+
+※ 備考：`AnimatableVolumeHelper` は `Start()` 時に自動でランタイムの Profile を生成しますので、［Create Runtime Profile］はエディターで編集する時のみ必要です。
 
 <br/>
 
