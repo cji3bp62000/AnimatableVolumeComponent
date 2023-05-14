@@ -1,6 +1,7 @@
 # ▶　Animatable Volume Component
 
-**Animatable Volume Component** provides an interface for animating the URP PostProcessing Volumes.<br/>Use this component to give your game more interactive and dynamic look.
+**Animatable Volume Component** provides an interface for animating the URP PostProcessing Volumes. Use this component to give your game more interactive and dynamic look.
+<br/>For English README, please see look at: 👉 [README_EN.md](./README_en.md)
 
 **Animatable Volume Component** は、URP 及び HDRP のポストプロセス Volume をアニメーションさせるためのインターフェースを提供します。<br/>このコンポーネントを使用して、より臨場感のあるシーンや演出を作ることができます。
 
@@ -20,6 +21,10 @@ Animatable Volume Component 以下の特徴を有します：
 
 <br/>
 
+# 導入
+
+[Github レポジトリ](https://github.com/cji3bp62000/AnimatableVolumeComponent) の右サイドバーの Releases から、最新版の unitypackage をダウンロードして、プロジェクトにインポートしてください。
+
 # 使い方
 
 0. （一度のみ）アニメーション用の補助コンポーネントの自動生成
@@ -28,7 +33,7 @@ Animatable Volume Component 以下の特徴を有します：
 
 <br/>
 
-## (下準備) 補助コンポーネントの自動生成
+## 1. (下準備) 補助コンポーネントの自動生成
 
 本コンポーネントの UnityPackage を導入後、メニューの `Tools > Animatable Volume > Animatable Volume Wizard` を選択します。下記のようなポップアップが表示されます。
 
@@ -44,7 +49,7 @@ Animatable Volume Component 以下の特徴を有します：
 
 <br/>
 
-## 補助コンポーネントのアタッチ
+## 2. 補助コンポーネントのアタッチ
 
 アニメーションをさせたい `Volume` のゲームオブジェクトに、`Animator` 及び `AnimatableVolumeHelper` をアタッチします。
 
@@ -62,16 +67,21 @@ Animatable Volume Component 以下の特徴を有します：
 
 　![Helper_3-all](https://github.com/cji3bp62000/AnimatableVolumeComponent/assets/34641639/5fd157b2-91d6-4b3e-9275-dd6039773949)
 
-</br>
+<br/>
 
-## アニメーションキーイング
+## 3. アニメーションキーイング
 
-補助コンポーネントをアタッチ後、後はいつものアニメーションのやり方です。
+補助コンポーネントをアタッチ後、後はいつものアニメーションの付け方と同じです。
 </br>アニメーションウィンドウを開き、アニメーションさせたい時間点に、Profile の値を設定して、キーを打っていきます。
 
 　![AnimationKeying](https://github.com/cji3bp62000/AnimatableVolumeComponent/assets/34641639/98f673ab-5220-4f61-8b04-6b3ff4e3884a)
+
+<br/>
 
 キーを打ち終わった後、アニメーションをプレビューして、出来を確認します。
 
 　![AnimationPreview](https://github.com/cji3bp62000/AnimatableVolumeComponent/assets/34641639/2779f90e-6f29-4e80-9a3e-26441a37fe19)
 
+<br/>
+
+アニメーションに問題が無ければ、アニメーションをアニメーターコントローラーに組み込んで、ゲームを実行すると再生されます。
