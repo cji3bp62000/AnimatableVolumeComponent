@@ -11,8 +11,6 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 {
     public partial class AnimatableVolumeWizard : EditorWindow
     {
-        private const string RefreshMappingCodeKey = "AnimatableVolumeWizard.RefreshMappingCodeKey";
-
         [SerializeField]
         private VisualTreeAsset m_VisualTreeAsset = default;
 
@@ -39,9 +37,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
             // initialize data
             InitializeList();
-            if (ShouldRefreshMappingCode()) {
-                RefreshMappingCode();
-            }
+
             // initialize UI
             InitializeListView(treeRoot);
             InitializeOtherUI(treeRoot);
@@ -133,35 +129,29 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
         private void GenerateCode()
         {
+            List<Type> generatedVolumeComponentList = new();
             foreach (var item in volumeComponentInfoList) {
                 if (item.IsChecked) {
                     AnimatableVolumeComponentCodeGenerator.GenerateVolumeComponentHelperCode(item.VolumeComponentType);
+                    generatedVolumeComponentList.Add(item.VolumeComponentType);
                 }
             }
+            RefreshMappingCode(generatedVolumeComponentList);
             AssetDatabase.Refresh();
 
             Debug.Log("Generate done!");
-            RefreshMappingCode();
-            EditorPrefs.SetBool(RefreshMappingCodeKey, true);
 
             foreach (var item in volumeComponentInfoList) {
                 item.SetIsChecked(false);
             }
         }
 
-        private bool ShouldRefreshMappingCode()
+        private void RefreshMappingCode(List<Type> justGeneratedVolumeComponentList)
         {
-            return EditorPrefs.GetBool(RefreshMappingCodeKey, false);
-        }
-
-        private void RefreshMappingCode()
-        {
-            EditorPrefs.DeleteKey(RefreshMappingCodeKey);
             var mapping = volumeComponentInfoList
                 .Where(info => info.AnimatableComponentType != null)
                 .ToDictionary(info => info.VolumeComponentType, info => info.AnimatableComponentType);
-            AnimatableVolumeComponentCodeGenerator.GenerateMapCode(mapping);
-            AssetDatabase.Refresh();
+            AnimatableVolumeComponentCodeGenerator.GenerateMapCode(mapping, justGeneratedVolumeComponentList);
         }
     }
 
