@@ -8,15 +8,15 @@
 
 Animatable Volume Component has the following features:
 
-1. easy to key and play animations for each post-process parameter, just like 
-2. Due to code analysis and automatic code generation,
-    - the package absorbs parameter changes from one Unity version to the next
-    - Animation of ustom `VolumeComponent` is also possible.
-3. No change in volume manipulation before and after installation of the tool, except during animation
+1. easy to key and play animations for each post-process parameter, just like ordinary animation-keying
+2. By automatic code analysis and code generation,
+    - the package absorbs parameter changes between different Unity versions
+    - it is also possible to animate your custom `VolumeComponent`.
+3. No code needed
 
 # Installation
 
-Download the latest version of unitypackage from Releases on the right sidebar of the [Github repository]((https://github.com/cji3bp62000/AnimatableVolumeComponent)) and import it into your project.
+Download the latest version of unitypackage from Releases on the right sidebar of [github repository](https://github.com/cji3bp62000/AnimatableVolumeComponent), and import it into your project.
 
 # Usage
 
