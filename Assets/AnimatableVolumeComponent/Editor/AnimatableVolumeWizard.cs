@@ -9,6 +9,9 @@ using UnityEngine.UIElements;
 
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
+    /// <summary>
+    /// Wizard for auto generating AnimatableVolumeComponent.
+    /// </summary>
     public partial class AnimatableVolumeWizard : EditorWindow
     {
         [SerializeField]
@@ -43,6 +46,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             InitializeOtherUI(treeRoot);
         }
 
+        /// <summary>
+        /// Check the codebase, and initialize the list of existing VolumeComponents and corresponding AnimatableVolumeComponents.
+        /// </summary>
         private void InitializeList()
         {
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -73,6 +79,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             }
         }
 
+        /// <summary>
+        /// Initialize the list view of VolumeComponents.
+        /// </summary>
         private void InitializeListView(VisualElement treeRoot)
         {
             var listParent = treeRoot.Q("ListParent");
@@ -86,6 +95,10 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             }
         }
 
+        /// <summary>
+        /// Initialize the other UI elements, and localize.
+        /// </summary>
+        /// <param name="treeRoot"></param>
         private void InitializeOtherUI(VisualElement treeRoot)
         {
             var isJapanese = Application.systemLanguage == SystemLanguage.Japanese;
@@ -127,6 +140,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             }
         }
 
+        /// <summary>
+        /// Generate AnimatableVolumeComponent code.
+        /// </summary>
         private void GenerateCode()
         {
             List<Type> generatedVolumeComponentList = new();
@@ -159,8 +175,12 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
     public partial class AnimatableVolumeWizard
     {
+        /// <summary>
+        /// helper class to contain information of types and UIs.
+        /// </summary>
         public class VolumeComponentInfoItem
         {
+            // checkmark icon
             private static readonly GUIContent okIcon = EditorGUIUtility.IconContent("TestPassed");
 
             // data

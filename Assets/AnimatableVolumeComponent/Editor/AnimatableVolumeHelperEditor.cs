@@ -8,6 +8,9 @@ using UnityEngine.Rendering;
 
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
+    /// <summary>
+    /// Editor for AnimatableVolumeHelper. Provides features for animation-keying VolumeComponents.
+    /// </summary>
     [CustomEditor(typeof(AnimatableVolumeHelper))]
     public class AnimatableVolumeHelperEditor : Editor
     {
@@ -41,6 +44,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             DrawMissingAnimatableComponent();
         }
 
+        /// <summary>
+        /// Display the current running profile status.
+        /// </summary>
         private void DrawRuntimeProfileSettings()
         {
             var hasRuntimeProfile = targetVolume.HasInstantiatedProfile();
@@ -67,7 +73,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 GUI.color = Color.white;
             }
             else {
-                if (GUILayout.Button("Create Runtime Profile")) {
+                if (GUILayout.Button("Create Runtime Profile  (for editing)")) {
                     volumeHelper.CreateRuntimeProfile();
                 }
             }
@@ -75,6 +81,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             GUI.color = Color.white;
         }
 
+        /// <summary>
+        /// Draw missing animatable component list, and show a button to add them.
+        /// </summary>
         private void DrawMissingAnimatableComponent()
         {
             if (!targetVolume.sharedProfile) return;

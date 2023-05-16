@@ -7,6 +7,9 @@ using UnityEngine.Rendering;
 
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
+    /// <summary>
+    /// Code generator for AnimatableVolumeComponent and mapping.
+    /// </summary>
     public static class AnimatableVolumeComponentCodeGenerator
     {
         public class VolumeParameterFieldInfo
@@ -29,6 +32,10 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             "TextureCurve",
         };
 
+        /// <summary>
+        /// Generate AnimatableVolumeComponent for the given VolumeComponent type.
+        /// </summary>
+        /// <param name="type">VolumeComponent type</param>
         public static void GenerateVolumeComponentHelperCode(Type type)
         {
             var vcType = typeof(VolumeComponent);
@@ -151,7 +158,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         }
 
         /// <summary>
-        /// 一層のみのパラメータ検索
+        /// One-layer-only VolumeParameter field searching
         /// </summary>
         /// <param name="targetVolumeComponentType"></param>
         /// <param name="parameterFieldList"></param>
@@ -193,6 +200,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             }
         }
 
+        /// <summary>
+        /// Get "SomeType" from VolumeParameter＜SomeType＞ (or child class of VolumeParameter)
+        /// </summary>
+        /// <param name="volumeParameterType"></param>
+        /// <returns>containing type</returns>
         private static Type GetVolumeParameterValueType(Type volumeParameterType)
         {
             var directChildType = volumeParameterType;
@@ -235,6 +247,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             return false;
         }
 
+        /// <summary>
+        /// Generate Mapping
+        /// </summary>
+        /// <param name="vcAvcMap"></param>
+        /// <param name="vcList"></param>
         public static void GenerateMapCode(Dictionary<Type, Type> vcAvcMap, List<Type> vcList = null)
         {
             // existing Animatable Component map
@@ -281,6 +298,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             System.IO.File.WriteAllText(path + fileName, generatedCode);
         }
 
+        /// <summary>
+        /// Get full name of type, replacing "+" with "."
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         private static string GetFullName(Type type)
         {
             return type.FullName.Replace("+", ".");
