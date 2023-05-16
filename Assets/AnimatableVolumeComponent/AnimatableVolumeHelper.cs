@@ -8,6 +8,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
     [RequireComponent(typeof(Volume))]
     public partial class AnimatableVolumeHelper : MonoBehaviour
     {
+        /// <summary> cached Volume </summary>
         private Volume volume
         {
             get {
@@ -17,8 +18,15 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         }
         private Volume _cachedVolume;
 
+        /// <summary> cached VolumeComponent in VolumeProfile </summary>
         private Dictionary<Type, VolumeComponent> runtimeVolumeComponentDic = new();
 
+        /// <summary>
+        /// Get VolumeComponent.
+        /// </summary>
+        /// <param name="volumeComponent">target VolumeComponent</param>
+        /// <typeparam name="T">target VolumeComponent type</typeparam>
+        /// <returns>success or not</returns>
         public bool TryGet<T>(out T volumeComponent) where T : VolumeComponent
         {
             var hasValue = runtimeVolumeComponentDic.TryGetValue(typeof(T), out var vc);
@@ -26,6 +34,12 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             return hasValue;
         }
 
+        /// <summary>
+        /// Get VolumeComponent.
+        /// </summary>
+        /// <param name="volumeComponentType">target VolumeComponent type</param>
+        /// <param name="volumeComponent">target VolumeComponent</param>
+        /// <returns>success or not</returns>
         public bool TryGet(Type volumeComponentType, out VolumeComponent volumeComponent)
         {
             return runtimeVolumeComponentDic.TryGetValue(volumeComponentType, out volumeComponent);
@@ -39,6 +53,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             CreateRuntimeProfile();
         }
 
+        /// <summary>
+        /// Create runtime profile and cache VolumeComponents.
+        /// </summary>
         public void CreateRuntimeProfile()
         {
             if (volume.HasInstantiatedProfile()) return;
@@ -60,6 +77,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 #endif
         }
 
+        /// <summary>
+        /// Clear runtime profile and cached components.
+        /// </summary>
         public void ClearRuntimeProfile()
         {
             if (!volume.HasInstantiatedProfile()) return;
@@ -70,6 +90,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             runtimeVolumeComponentDic.Clear();
         }
 
+        /// <summary>
+        /// Add AnimatableVolumeComponent to this GameObject during playing.
+        /// </summary>
         public void AddCorrespondingComponent()
         {
             var avcList = GetComponents<AnimatableVolumeComponentBase>();
@@ -82,6 +105,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             }
         }
 
+        /// <summary>
+        /// Clear runtime profile on destroy.
+        /// </summary>
         private void OnDestroy()
         {
             ClearRuntimeProfile();

@@ -4,14 +4,20 @@ using UnityEngine.Rendering;
 
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
+    /// <summary>
+    /// Base class for AnimatableVolumeComponent. Provides interface for writing/reading to/from VolumeComponent.
+    /// </summary>
+    /// [ExecuteAlways] is for OnDidApplyAnimationProperties() callback: previewing animation purpose.
     [ExecuteAlways]
     [RequireComponent(typeof(Volume)), RequireComponent(typeof(AnimatableVolumeHelper))]
     public abstract class AnimatableVolumeComponentBase : MonoBehaviour
     {
         public abstract Type TargetType { get; }
 
+        /// <summary> Is this VolumeComponent active? </summary>
         public bool active;
 
+        /// <summary> cached AnimatableVolumeHelper </summary>
         protected AnimatableVolumeHelper volumeHelper
         {
             get {
@@ -21,6 +27,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         }
         private AnimatableVolumeHelper _cachedVolumeHelper;
 
+        /// <summary>
+        /// Write values to VolumeComponent in LateUpdate.
+        /// </summary>
         protected virtual void LateUpdate()
         {
 #if UNITY_EDITOR
@@ -44,6 +53,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         }
 #endif
 
+        /// <summary>
+        /// Create runtime profile and write values to VolumeComponent.
+        /// </summary>
         private void OnValidate()
         {
             // if no runtime profile, create one
@@ -54,7 +66,13 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             ReadFromVolumeComponent();
         }
 
+        /// <summary>
+        /// Write values to VolumeComponent.
+        /// </summary>
         public abstract void WriteToVolumeComponent();
+        /// <summary>
+        /// Read values from VolumeComponent.
+        /// </summary>
         public abstract void ReadFromVolumeComponent();
     }
 }

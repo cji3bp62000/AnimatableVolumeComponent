@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace TsukimiNeko.AnimatableVolumeComponent.Internal
 {
+    /// <summary>
+    /// Settings for internal Editor-use only.
+    /// </summary>
     public class AnimatableVolumeComponentEditorSettings : ScriptableObject
     {
         private const string DefaultEditorFolder = "Assets/AnimatableVolumeComponent/Editor/";
@@ -33,6 +36,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent.Internal
             EditorApplication.update += NavigateOnFirstImport;
         }
 
+        /// <summary>
+        /// Ask user to create Animatable Volume Components on first import.
+        /// </summary>
         private static void NavigateOnFirstImport()
         {
             EditorApplication.update -= NavigateOnFirstImport;

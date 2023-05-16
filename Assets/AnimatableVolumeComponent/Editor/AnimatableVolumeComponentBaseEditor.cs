@@ -6,6 +6,9 @@ using UnityEngine.Rendering;
 
 namespace TsukimiNeko.AnimatableVolumeComponent
 {
+    /// <summary>
+    /// Custom editor of AnimatableVolumeComponent. Has a VolumeComponent-like inspector.
+    /// </summary>
     [CustomEditor(typeof(AnimatableVolumeComponentBase), true)]
     public class AnimatableVolumeComponentBaseEditor : Editor
     {
@@ -95,6 +98,10 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             showedProperties.Clear();
         }
 
+        /// <summary>
+        /// sync values from VolumeComponent to AnimatableVolumeComponentBase;
+        /// by this, user can key animation by directly change VolumeComponent parameter values.
+        /// </summary>
         private void SyncVolumeComponentValues()
         {
             if (!avc) return;
