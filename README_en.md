@@ -25,6 +25,7 @@ This section describes how to animate each parameter of the post-process using t
 Follow the steps below to create an animation of VolumeComponent.
 
 - (one time preparation) Automatic code generation of helper components for each `VolumeComponent`
+  - Helper components are just for animation info storing, no need to learn how to use them
 - Attach helper components to the Volume GameObject
 - Animation keying
 
@@ -57,13 +58,14 @@ Press ［Add Corresponding Animatable Component］ button in the Inspector of th
 
 <br/>
 
-Helpers components could only write values to runtime Profiles, because we don't want to change Profile-asset's value, since it will be permanent change in project.
+Helper components could only write values to runtime Profiles, because we don't want to change Profile-asset's value, since it will be permanent change in project.
 
 Hence, to create a Runtime Profile, press ［Create Runtime Profile］  in `AnimatableVolumeHelper`, and a copy of the Profile asset will be generated. (it may be generated automatically, sometimes)
 
 ![Helper_3-all](./ReadmeImages/Helper_3-all.png)
 
 *`AnimatableVolumeHelper` will create a new Runtime Profile on `Start()` everytime, so no any operation needed when playing.
+**AnimatableComponents are mainly used for recording animations, so no special operations are required after attaching them.
 
 <br/>
 
