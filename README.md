@@ -1,5 +1,7 @@
 # ▶　Animatable Volume Component
 
+![AnimationPreview](./ReadmeImages/AnimationPreview.gif)
+
 **Animatable Volume Component** provides an interface for animating the URP/HDRP PostProcessing Volumes. Use this component to give your game more interactive and dynamic look.
 <br/>For English README, please take a look at: 👉 [README_EN.md](./README_en.md)
 
