@@ -85,7 +85,7 @@ Animatable Volume Component 以下の特徴があります：
 ## 2. アニメーションキーイング
 
 補助コンポーネントをアタッチ後、後はいつものアニメーションの付け方と同じです。
-</br>アニメーションウィンドウを開き、アニメーションさせたい時間点に、Profile の値を設定して、キーを打っていきます。
+<br/>アニメーションウィンドウを開き、アニメーションさせたい時間点に、Profile の値を設定して、キーを打っていきます。
 
 　![AnimationKeying](./ReadmeImages/AnimationKeying.gif)
 
@@ -98,6 +98,17 @@ Animatable Volume Component 以下の特徴があります：
 <br/>
 
 アニメーションに問題が無ければ、アニメーションをアニメーターコントローラーに組み込んで、ゲームを実行すると再生されます。
+
+<br/>
+
+## Timeline でのアニメーションキーイング
+
+また、同じやり方で Timeline のアニメーショントラックにポスプロの各パラメータを直接キーイングすることもできます。
+<br/>レコードボタンを押して、Profile の値を設定すると、キーを打てます。
+
+　![TimelineKeying](./ReadmeImages/TimelineKeying.png)
+
+<br/>
 
 # 実装詳細
 
