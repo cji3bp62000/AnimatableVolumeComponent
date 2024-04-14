@@ -71,7 +71,7 @@ Hence, to create a Runtime Profile, press ［Create Runtime Profile］  in `Anim
 
 <br/>
 
-## 2. Animation keying
+## 2. Animation keyframing
 
 After attaching the helper components in session 1, the rest of the process is the same as usual for adding animation.<br/>
 Open the Animation Window, set the Profile value to the time point you want to animate, and adjust the parameter to the desired value.
@@ -84,6 +84,17 @@ After finished keying, you can preview the animation to check the result.
 
 
 If the animation is fine, set the AnimationClip to the proper state of the animator controller, and play back will start when entering the state.
+
+<br/>
+
+## Keyframing on Timeline
+
+Similarly, you can directly keyframe each parameter of Post-processing in the animation track of Timeline, using the same way.
+<br/>Press the record button on the track and set the values in the profile, then the values would be can keyframed.
+
+　![TimelineKeying](./ReadmeImages/TimelineKeying.png)
+
+<br/>
 
 # Implementation Details
 This section describes the implementation of the AnimatableVolumeComponent.
