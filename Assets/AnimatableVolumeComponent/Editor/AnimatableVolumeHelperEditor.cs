@@ -41,6 +41,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             base.OnInspectorGUI();
 
             DrawRuntimeProfileSettings();
+            DrawMissingVolumeComponentInOriginalVolumeProfile();
             DrawMissingAnimatableComponent();
         }
 
@@ -88,32 +89,113 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         {
             if (!targetVolume.sharedProfile) return;
 
+            // check if there are any missing animatable components
             tempVCList.Clear();
             foreach (var vc in targetVolume.sharedProfile.components) {
                 var vcType = vc.GetType();
-                if (animatableVolumeComponentList.FindIndex(avc => avc.TargetType == vcType) < 0) {
+                var sameTypeFound = false;
+                foreach (var avc in animatableVolumeComponentList) {
+                    if (avc.TargetType == vcType) {
+                        sameTypeFound = true;
+                        break;
+                    }
+                }
+                if (!sameTypeFound) {
                     tempVCList.Add(vcType);
                 }
             }
 
-            if (tempVCList.Count > 0) {
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("Animatable Component Missing:");
-                var log = string.Join(
-                    "\n",
-                    tempVCList.Select(vcType => $" - {vcType.Name}")
-                );
-                EditorGUILayout.HelpBox(log, MessageType.None);
-                EditorGUILayout.Space(5);
-                if (GUILayout.Button("Add Corresponding Animatable Component")) {
-                    tempVCList.Reverse();
-                    for (var i = tempVCList.Count - 1; i >= 0; i--) {
-                        var vcType = tempVCList[i];
-                        if (!AnimatableVolumeComponentMapping.Map.TryGetValue(vcType, out var acType)) continue;
+            if (tempVCList.Count == 0) return;
 
-                        Undo.AddComponent(volumeHelper.gameObject, acType);
+            // draw message
+            EditorGUILayout.Space(12);
+            EditorGUILayout.LabelField("▶ Animatable Components Missing:", EditorStyles.largeLabel);
+            var log = string.Join(
+                "\n",
+                tempVCList.Select(vcType => $" - {vcType.Name}")
+            );
+            var guiBackgroundOriginColor = GUI.backgroundColor;
+            GUI.backgroundColor = Color.red;
+            EditorGUILayout.HelpBox(log, MessageType.None);
+            GUI.backgroundColor = guiBackgroundOriginColor;
+
+            // draw button
+            EditorGUILayout.Space(5);
+            if (!GUILayout.Button("Add Corresponding Animatable Component")) return;
+            {
+                tempVCList.Reverse();
+                for (var i = tempVCList.Count - 1; i >= 0; i--) {
+                    var vcType = tempVCList[i];
+                    if (!AnimatableVolumeComponentMapping.Map.TryGetValue(vcType, out var acType)) continue;
+
+                    Undo.AddComponent(volumeHelper.gameObject, acType);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Draw missing volume components that only exist on runtime (instantiated) profile, and show a button to add them back to original profile.
+        /// </summary>
+        private void DrawMissingVolumeComponentInOriginalVolumeProfile()
+        {
+            if (!targetVolume.HasInstantiatedProfile() || !targetVolume.sharedProfile) return;
+
+            var runtimeProfile = targetVolume.profile;
+            var originalProfile = targetVolume.sharedProfile;
+
+            // check if there are any missing components
+            tempVCList.Clear();
+            foreach (var vc in runtimeProfile.components) {
+                var vcType = vc.GetType();
+                var sameTypeFound = false;
+                foreach (var originalVc in originalProfile.components) {
+                    if (vcType == originalVc.GetType()) {
+                        sameTypeFound = true;
+                        break;
                     }
                 }
+                if (!sameTypeFound) {
+                    tempVCList.Add(vcType);
+                }
+            }
+
+            if (tempVCList.Count == 0) return;
+
+            // draw message
+            EditorGUILayout.Space(12);
+            EditorGUILayout.LabelField("▶ Volume Components Missing in Original Profile:", EditorStyles.largeLabel);
+            var log = string.Join(
+                "\n",
+                tempVCList.Select(vcType => $" - {vcType.Name}")
+            );
+            var guiBackgroundOriginColor = GUI.backgroundColor;
+            GUI.backgroundColor = Color.red;
+            EditorGUILayout.HelpBox(log, MessageType.None);
+            GUI.backgroundColor = guiBackgroundOriginColor;
+
+            // draw button
+            EditorGUILayout.Space(5);
+            if (GUILayout.Button("Add Missing Volume Component")) {
+                tempVCList.Reverse();
+                for (var i = tempVCList.Count - 1; i >= 0; i--) {
+                    // add to original profile
+                    var vcType = tempVCList[i];
+                    originalProfile.Add(vcType);
+
+                    // also check if the corresponding animatable component exists; if no, add it
+                    var sameTypeFound = false;
+                    foreach (var avc in animatableVolumeComponentList) {
+                        if (avc.TargetType == vcType) {
+                            sameTypeFound = true;
+                            break;
+                        }
+                    }
+                    if (sameTypeFound) continue;
+                    if (!AnimatableVolumeComponentMapping.Map.TryGetValue(vcType, out var acType)) continue;
+
+                    Undo.AddComponent(volumeHelper.gameObject, acType);
+                }
+                EditorUtility.SetDirty(originalProfile);
             }
         }
     }
