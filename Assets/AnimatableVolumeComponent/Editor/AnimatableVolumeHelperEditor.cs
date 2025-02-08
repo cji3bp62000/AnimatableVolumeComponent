@@ -180,7 +180,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 for (var i = tempVCList.Count - 1; i >= 0; i--) {
                     // add to original profile
                     var vcType = tempVCList[i];
-                    originalProfile.Add(vcType);
+                    AddComponentToProfile(originalProfile, vcType);
 
                     // also check if the corresponding animatable component exists; if no, add it
                     var sameTypeFound = false;
@@ -196,7 +196,47 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                     Undo.AddComponent(volumeHelper.gameObject, acType);
                 }
                 EditorUtility.SetDirty(originalProfile);
+                AssetDatabase.SaveAssetIfDirty(originalProfile);
             }
+        }
+
+        /// <summary>
+        /// Add a volume component to the profile. This is a modified version of VolumeComponentListEditor.AddComponent.
+        /// </summary>
+        /// <param name="profile">target volume profile</param>
+        /// <param name="type">type of volume component</param>
+        private static void AddComponentToProfile(VolumeProfile profile, Type type)
+        {
+            var so = new SerializedObject(profile);
+            var componentsSP = so.FindProperty(nameof(VolumeProfile.components));
+
+            var component = (VolumeComponent)CreateInstance(type);
+            component.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
+            component.name = type.Name;
+            Undo.RegisterCreatedObjectUndo(component, "");
+
+            // Store this new effect as a subasset so we can reference it safely afterwards
+            // Only when we're not dealing with an instantiated asset
+            if (EditorUtility.IsPersistent(profile))
+                AssetDatabase.AddObjectToAsset(component, profile);
+
+            // Grow the list first, then add - that's how serialized lists work in Unity
+            componentsSP.arraySize++;
+            var componentProp = componentsSP.GetArrayElementAtIndex(componentsSP.arraySize - 1);
+            componentProp.objectReferenceValue = component;
+
+            // Create & store the internal editor object for this effect
+            // CreateEditor(component, componentProp, forceOpen: true);
+
+            so.ApplyModifiedProperties();
+
+            // Force save / refresh
+            /*
+            if (EditorUtility.IsPersistent(profile)) {
+                EditorUtility.SetDirty(profile);
+                AssetDatabase.SaveAssets();
+            }
+            */
         }
     }
 }
