@@ -66,6 +66,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 runtimeVolumeComponentDic[volumeComponent.GetType()] = volumeComponent;
             }
 
+            // the VolumeComponents are new instances, so the non-public VolumeParameter cache has to be resolved again
+            foreach (var avc in GetComponents<AnimatableVolumeComponentBase>()) {
+                avc.RefreshParameterCache();
+            }
+
 #if UNITY_EDITOR
             if (!Application.isPlaying) {
                 // in editor mode, we don't auto write to volume component at LateUpdate, so manually initialize runtime profile
@@ -88,6 +93,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             volume.profile = null;
             DestroyImmediate(runtimeProfile);
             runtimeVolumeComponentDic.Clear();
+
+            // the cached VolumeParameters belong to the destroyed profile; don't keep them around
+            foreach (var avc in GetComponents<AnimatableVolumeComponentBase>()) {
+                avc.ClearParameterCache();
+            }
         }
 
         /// <summary>
@@ -124,6 +134,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         public void EditorForceRefreshRuntimeVolumeComponentDic()
         {
             runtimeVolumeComponentDic.Clear();
+            foreach (var avc in GetComponents<AnimatableVolumeComponentBase>()) {
+                avc.ClearParameterCache();
+            }
             if (!volume.HasInstantiatedProfile()) return;
 
             var runtimeProfile = volume.profile;

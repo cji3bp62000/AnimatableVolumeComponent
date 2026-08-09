@@ -28,6 +28,53 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         private AnimatableVolumeHelper _cachedVolumeHelper;
 
         /// <summary>
+        /// VolumeComponent that the non-public VolumeParameter cache was resolved from. <br/>
+        /// This is not serialized, so it also becomes null after a domain reload.
+        /// </summary>
+        private VolumeComponent cachedParameterSource;
+
+        /// <summary>
+        /// Resolve the non-public VolumeParameter cache, if the source VolumeComponent has changed. <br/>
+        /// This must be called at the head of the generated WriteToVolumeComponent(T) / ReadFromVolumeComponent(T),
+        /// not in the public wrappers: Reset() passes the VolumeComponent of the <b>shared</b> profile asset, and
+        /// caching that one would make later writes modify the project asset itself.
+        /// </summary>
+        /// <param name="volumeComponent">VolumeComponent that is going to be written / read</param>
+        protected void RefreshParameterCache(VolumeComponent volumeComponent)
+        {
+            if (ReferenceEquals(cachedParameterSource, volumeComponent)) return;
+
+            cachedParameterSource = volumeComponent;
+            CacheNonPublicParameters(volumeComponent);
+        }
+
+        /// <summary>
+        /// Resolve the non-public VolumeParameter cache with the current runtime VolumeComponent.
+        /// </summary>
+        public void RefreshParameterCache()
+        {
+            if (!volumeHelper.TryGet(TargetType, out var volumeComponent)) return;
+
+            RefreshParameterCache(volumeComponent);
+        }
+
+        /// <summary>
+        /// Clear the non-public VolumeParameter cache. The next write / read resolves it again.
+        /// </summary>
+        public void ClearParameterCache()
+        {
+            cachedParameterSource = null;
+            CacheNonPublicParameters(null);
+        }
+
+        /// <summary>
+        /// Resolve non-public VolumeParameters by reflection. Overridden by generated code, and only when the
+        /// VolumeComponent actually has a non-public VolumeParameter.
+        /// </summary>
+        /// <param name="volumeComponent">VolumeComponent to resolve from; null clears the cache</param>
+        protected virtual void CacheNonPublicParameters(VolumeComponent volumeComponent) { }
+
+        /// <summary>
         /// Write values to VolumeComponent in LateUpdate.
         /// </summary>
         protected virtual void LateUpdate()

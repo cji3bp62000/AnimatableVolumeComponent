@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -20,7 +21,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             public string volumeComponentFieldName;
             public string helperFieldName;
 
-            public bool isVolumeComponentProperty;
+            public bool isNonPublic;
             public bool isNonAnimatableType;
         }
 
@@ -29,6 +30,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         /// AnimatableVolumeComponentBaseEditor.
         /// </summary>
         public const string OverridePrefix = "override_";
+
+        /// <summary>
+        /// Prefix of the generated field that caches a non-public VolumeParameter resolved by reflection.
+        /// </summary>
+        private const string CachedPrefix = "cached_";
 
         /// <summary>
         /// Types that can't be animated (due to technical limitations)
@@ -66,43 +72,57 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             var fieldDeclareCode = "";
             var readMethodCode = "";
             var writeMethodCode = "";
+            var cacheMethodCode = "";
+            // "how to reach the VolumeParameter" (public field / cached non-public field) and "is the value animatable"
+            // are independent, so both are handled by the same code path instead of one branch per combination
             foreach (var fieldInfo in fieldInfoList) {
-                // code generation for special case
-                if (fieldInfo.isVolumeComponentProperty) {
-                    // property only; we can't set the override value
-                    fieldDeclareCode += $"{fieldIndent}public {GetFullName(fieldInfo.valueType)} {fieldInfo.helperFieldName};\n";
-                    // strip the ".value" part
-                    readMethodCode +=
-                        $"{methodIndent}{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName};\n";
-                    writeMethodCode +=
-                        $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName} = {fieldInfo.helperFieldName};\n";
-                    continue;
-                }
-                else if (fieldInfo.isNonAnimatableType) {
-                    // override state only; we can't set the value of non animatable types
-                    fieldDeclareCode += $"{fieldIndent}public bool {OverridePrefix}{fieldInfo.helperFieldName};\n";
-                    readMethodCode +=
-                        $"{methodIndent}{OverridePrefix}{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState;\n";
-                    writeMethodCode +=
-                        $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState = {OverridePrefix}{fieldInfo.helperFieldName};\n";
-                    continue;
-                }
+                // a non-public VolumeParameter is written through the instance we resolved by reflection
+                var parameterCode = fieldInfo.isNonPublic
+                    ? $"{CachedPrefix}{fieldInfo.helperFieldName}"
+                    : $"volumeComponent.{fieldInfo.volumeComponentFieldName}";
+                // reflection may fail (e.g. the field was renamed in another package version), so guard it
+                var bodyIndent = fieldInfo.isNonPublic ? methodIndent + "    " : methodIndent;
 
-                // normal code generation
                 // field definition
                 fieldDeclareCode += $"{fieldIndent}public bool {OverridePrefix}{fieldInfo.helperFieldName};\n";
-                fieldDeclareCode += $"{fieldIndent}public {GetFullName(fieldInfo.valueType)} {fieldInfo.helperFieldName};\n";
+                if (!fieldInfo.isNonAnimatableType) {
+                    fieldDeclareCode += $"{fieldIndent}public {GetFullName(fieldInfo.valueType)} {fieldInfo.helperFieldName};\n";
+                }
+                if (fieldInfo.isNonPublic) {
+                    var parameterTypeName = GetVolumeParameterTypeName(fieldInfo);
+                    fieldDeclareCode += $"{fieldIndent}private {parameterTypeName} {parameterCode};\n";
+                    cacheMethodCode +=
+                        $"{methodIndent}{parameterCode} = AnimatableVolumeReflectionUtility\n"
+                        + $"{methodIndent}    .GetNonPublicParameter<{parameterTypeName}>(volumeComponent, \"{fieldInfo.volumeComponentFieldName}\");\n";
+                }
+
                 // read from profile
+                if (fieldInfo.isNonPublic) readMethodCode += $"{methodIndent}if ({parameterCode} != null) {{\n";
                 readMethodCode +=
-                    $"{methodIndent}{OverridePrefix}{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState;\n";
-                readMethodCode +=
-                    $"{methodIndent}{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName}.value;\n";
+                    $"{bodyIndent}{OverridePrefix}{fieldInfo.helperFieldName} = {parameterCode}.overrideState;\n";
+                if (!fieldInfo.isNonAnimatableType) {
+                    readMethodCode += $"{bodyIndent}{fieldInfo.helperFieldName} = {parameterCode}.value;\n";
+                }
+                if (fieldInfo.isNonPublic) readMethodCode += $"{methodIndent}}}\n";
+
                 // write to profile
+                if (fieldInfo.isNonPublic) writeMethodCode += $"{methodIndent}if ({parameterCode} != null) {{\n";
                 writeMethodCode +=
-                    $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState = {OverridePrefix}{fieldInfo.helperFieldName};\n";
-                writeMethodCode +=
-                    $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName}.value = {fieldInfo.helperFieldName};\n";
+                    $"{bodyIndent}{parameterCode}.overrideState = {OverridePrefix}{fieldInfo.helperFieldName};\n";
+                if (!fieldInfo.isNonAnimatableType) {
+                    writeMethodCode += $"{bodyIndent}{parameterCode}.value = {fieldInfo.helperFieldName};\n";
+                }
+                if (fieldInfo.isNonPublic) writeMethodCode += $"{methodIndent}}}\n";
             }
+
+            // no non-public parameter: don't emit the cache machinery at all
+            var refreshCacheCode = cacheMethodCode == ""
+                ? ""
+                : $"{methodIndent}RefreshParameterCache(volumeComponent);";
+            var cacheMethodDeclareCode = cacheMethodCode == ""
+                ? ""
+                : $"\n{fieldIndent}protected override void CacheNonPublicParameters(VolumeComponent volumeComponent)\n"
+                + $"{fieldIndent}{{\n{cacheMethodCode}{fieldIndent}}}\n";
 
             var typeFullName = GetFullName(type);
 
@@ -125,7 +145,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         private void WriteToVolumeComponent({typeFullName} volumeComponent)
         {{
             if (!volumeComponent) return;
-
+{refreshCacheCode}
             volumeComponent.active = active;
 {writeMethodCode}
         }}
@@ -133,11 +153,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         private void ReadFromVolumeComponent({typeFullName} volumeComponent)
         {{
             if (!volumeComponent) return;
-
+{refreshCacheCode}
             active = volumeComponent.active;
 {readMethodCode}
         }}
-
+{cacheMethodDeclareCode}
         private void Reset()
         {{
             var volume = GetComponent<Volume>();
@@ -182,40 +202,31 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         {
             var parameterFieldList = new List<VolumeParameterFieldInfo>();
 
-            // also search for NonPublic fields; if there is corresponding public property, we can use it
+            // also search for NonPublic fields; the generated code reaches them by reflection
+            // (same BindingFlags and ordering as VolumeComponent.FindParameters() of the core package, so the
+            // parameters we find are exactly the ones VolumeManager blends)
             var fields = targetVolumeComponentType
                 .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 .OrderBy(t => t.MetadataToken); // Guaranteed order
-            var properties = targetVolumeComponentType
-                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .ToArray();
 
             foreach (var field in fields) {
                 if (!field.FieldType.IsSubclassOf(typeof(VolumeParameter))) continue;
                 // skip obsolete fields
                 if (field.GetCustomAttribute<ObsoleteAttribute>() != null) continue;
+                // skip compiler generated fields (auto property backing fields); their names are not valid identifiers
+                if (field.GetCustomAttribute<CompilerGeneratedAttribute>() != null) continue;
 
                 var parameterValueType = GetVolumeParameterValueType(field.FieldType);
                 // not derived from VolumeParameter<T>; we can't know the value type
                 if (parameterValueType == null) continue;
 
-                var volumeComponentMemberName = field.Name;
-                if (field.IsPublic == false) {
-                    if (TryFindCorrespondingProperty(field, parameterValueType, properties, out var property)) {
-                        volumeComponentMemberName = property.Name;
-                    }
-                    else {
-                        // field not public and no corresponding property found; we can't access it
-                        continue;
-                    }
-                }
                 parameterFieldList.Add(new VolumeParameterFieldInfo()
                 {
                     fieldType = field.FieldType,
                     valueType = parameterValueType,
-                    volumeComponentFieldName = volumeComponentMemberName,
+                    volumeComponentFieldName = field.Name,
                     helperFieldName = field.Name,
-                    isVolumeComponentProperty = !field.IsPublic,
+                    isNonPublic = !field.IsPublic,
                     isNonAnimatableType = NonAnimatableTypeNames.Contains(parameterValueType.Name),
                 });
             }
@@ -267,33 +278,16 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         }
 
         /// <summary>
-        /// If there is corresponding public property of field, return it.
-        /// We can't precisely know if there is a corresponding property, so the result may be wrong. <br/>
-        /// This check is mainly for HDRP default VolumeComponents that have private Parameter fields but corresponding
-        /// public Properties.
+        /// Type name to declare the cached non-public VolumeParameter with. <br/>
+        /// This is built from the value type, not from the actual field type: a field may be declared as a closed
+        /// generic (VolumeParameter＜float＞), and Type.FullName of a closed generic is assembly qualified and does
+        /// not compile. VolumeParameter＜T＞ has both "overrideState" and "value", so it is enough anyway.
         /// </summary>
-        /// <param name="field"></param>
-        /// <param name="fieldParameterValueType"></param>
-        /// <param name="properties"></param>
-        /// <param name="correspondingProperty"></param>
-        /// <returns></returns>
-        private static bool TryFindCorrespondingProperty(
-            FieldInfo field,
-            Type fieldParameterValueType,
-            PropertyInfo[] properties,
-            out PropertyInfo correspondingProperty)
+        /// <param name="fieldInfo">VolumeParameter field</param>
+        /// <returns>type name to write in the generated code</returns>
+        private static string GetVolumeParameterTypeName(VolumeParameterFieldInfo fieldInfo)
         {
-            correspondingProperty = null;
-            var lowerCaseFieldName = field.Name.ToLower();
-            foreach (var property in properties) {
-                if (property.PropertyType != fieldParameterValueType) continue;
-                var checkName = "m_" + property.Name.ToLower();
-                if (lowerCaseFieldName == checkName) {
-                    correspondingProperty = property;
-                    return true;
-                }
-            }
-            return false;
+            return $"UnityEngine.Rendering.VolumeParameter<{GetFullName(fieldInfo.valueType)}>";
         }
 
         /// <summary>

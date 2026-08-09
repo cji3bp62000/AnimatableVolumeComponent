@@ -20,7 +20,15 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         [SerializeField]
         private VisualTreeAsset m_ListItemAsset = default;
 
+        /// <summary> color of a non-public VolumeParameter name </summary>
+        private static readonly Color NonPublicColor = new Color(1f, 0.68f, 0.26f);
+        /// <summary> color of the gray note text </summary>
+        private static readonly Color NoteColor = new Color(0.6f, 0.6f, 0.6f);
+
         private List<VolumeComponentInfoItem> volumeComponentInfoList = new();
+
+        /// <summary> localization flag; the list view is built before InitializeOtherUI(), so it is a field </summary>
+        private bool isJapanese;
 
         [MenuItem("Tools/Animatable Volume/Animatable Volume Wizard")]
         public static void ShowWindow()
@@ -37,6 +45,8 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             // Instantiate UXML
             VisualElement treeRoot = m_VisualTreeAsset.Instantiate();
             root.Add(treeRoot);
+
+            isJapanese = Application.systemLanguage == SystemLanguage.Japanese;
 
             // initialize data
             InitializeList();
@@ -124,6 +134,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 var paramParent = item.Q("ParamParent");
                 itemInfo.SetUIFoldout(item.Q<Label>("FoldoutArrow"), paramParent);
 
+                // the parameter selection buttons sit at the top of the parameter list
+                if (itemInfo.ParameterList.Count > 0) {
+                    itemInfo.SetUIParameterHeader(CreateParameterHeader(itemInfo));
+                    paramParent.Add(itemInfo.parameterHeader);
+                }
                 // parameter rows are all created here, and just hidden until the row is expanded
                 foreach (var parameterInfo in itemInfo.ParameterList) {
                     paramParent.Add(CreateParameterRow(parameterInfo));
@@ -131,6 +146,45 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 // the rows exist only now, so the initial enabled state has to be applied here
                 itemInfo.RefreshParameterEnabled();
             }
+        }
+
+        /// <summary>
+        /// Create the header of the parameter list: the parameter selection buttons, and a note about
+        /// how non-public VolumeParameters are written.
+        /// </summary>
+        private VisualElement CreateParameterHeader(VolumeComponentInfoItem itemInfo)
+        {
+            var header = new VisualElement();
+            header.style.flexShrink = 0f;
+            header.style.marginLeft = 32f; // indent by the foldout arrow (16px) and the check toggle (16px)
+
+            var buttonRow = new VisualElement();
+            buttonRow.style.flexDirection = FlexDirection.Row;
+            buttonRow.style.flexShrink = 0f;
+
+            var selectPublicBtn = new Button(() => itemInfo.SelectParameters(publicOnly: true));
+            selectPublicBtn.text = isJapanese ? "public のパラメータを選択" : "Select Public Parameters";
+            var selectAllBtn = new Button(() => itemInfo.SelectParameters(publicOnly: false));
+            selectAllBtn.text = isJapanese ? "全て選択" : "Select All";
+            buttonRow.Add(selectPublicBtn);
+            buttonRow.Add(selectAllBtn);
+            header.Add(buttonRow);
+
+            // the note only makes sense when there actually is a non-public VolumeParameter
+            if (itemInfo.ParameterList.Any(parameter => parameter.FieldInfo.isNonPublic)) {
+                var note = new Label(isJapanese
+                    ? "※ オレンジ＝非 public。開始時に Reflection で取得・キャッシュした VolumeParameter に直接書き込みます"
+                    : "* Orange = non-public. Resolved by reflection and cached at start,"
+                    + " then written to the VolumeParameter directly.");
+                note.style.color = NoteColor;
+                note.style.fontSize = 10f;
+                note.style.whiteSpace = WhiteSpace.Normal;
+                note.style.paddingLeft = 3f;
+                note.style.maxWidth = 500f;
+                header.Add(note);
+            }
+
+            return header;
         }
 
         /// <summary>
@@ -152,6 +206,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             var label = new Label(parameterInfo.ParameterName);
             label.style.unityTextAlign = TextAnchor.MiddleLeft;
             label.style.paddingLeft = 3f;
+            if (parameterInfo.FieldInfo.isNonPublic) {
+                // written through a VolumeParameter that is resolved by reflection and cached at start
+                label.text += "  (non-public)";
+                label.style.color = NonPublicColor;
+            }
             if (parameterInfo.FieldInfo.isNonAnimatableType) {
                 // only the override state can be generated for these; the value is not animatable
                 label.text += "  (override only)";
@@ -170,8 +229,6 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         /// <param name="treeRoot"></param>
         private void InitializeOtherUI(VisualElement treeRoot)
         {
-            var isJapanese = Application.systemLanguage == SystemLanguage.Japanese;
-
             SetElementEnable(treeRoot.Q("Description"), !isJapanese);
             SetElementEnable(treeRoot.Q("DescriptionJP"), isJapanese);
 
@@ -287,6 +344,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             public Label acLabel;
             public Label foldoutArrowLabel;
             public VisualElement parameterParent;
+            public VisualElement parameterHeader;
 
             public VolumeComponentInfoItem(Type volumeComponentType)
             {
@@ -334,9 +392,21 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             /// </summary>
             public void RefreshParameterEnabled()
             {
+                parameterHeader?.SetEnabled(IsChecked);
                 foreach (var parameter in ParameterList) {
                     // disable the row, not the toggle, so that the parameter name is grayed out too
                     parameter.row?.SetEnabled(IsChecked);
+                }
+            }
+
+            /// <summary>
+            /// Check the VolumeParameters of this VolumeComponent.
+            /// </summary>
+            /// <param name="publicOnly">check only the public ones, and uncheck the non-public ones</param>
+            public void SelectParameters(bool publicOnly)
+            {
+                foreach (var parameter in ParameterList) {
+                    parameter.SetIsChecked(!publicOnly || !parameter.FieldInfo.isNonPublic);
                 }
             }
 
@@ -392,7 +462,16 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 {
                     IsChecked = evt.newValue;
                     RefreshParameterEnabled();
+                    // checking it means we are going to generate it, so show what will be generated.
+                    // this is not in SetIsChecked(), otherwise "Select All" would expand every row at once
+                    if (evt.newValue) SetExpanded(true);
                 });
+            }
+
+            public void SetUIParameterHeader(VisualElement header)
+            {
+                parameterHeader = header;
+                header.SetEnabled(IsChecked);
             }
 
             public void SetUIFoldout(Label arrowLabel, VisualElement paramParent)
