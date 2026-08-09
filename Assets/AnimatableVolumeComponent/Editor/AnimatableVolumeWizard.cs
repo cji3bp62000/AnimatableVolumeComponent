@@ -51,6 +51,8 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         /// </summary>
         private void InitializeList()
         {
+            volumeComponentInfoList.Clear();
+
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             var volumeComponents = assemblies.SelectMany(assembly => assembly.GetTypes()
                     .Where(myType => myType.IsClass
@@ -77,6 +79,32 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
                 volumeComponentInfo.SetAnimatableComponentType(avc);
             }
+
+            InitializeParameterList();
+        }
+
+        /// <summary>
+        /// Initialize the VolumeParameter list of each VolumeComponent, and decide which parameters are checked
+        /// by default. <br/>
+        /// For an already generated VolumeComponent, we restore the check state from the fields of the generated
+        /// class, so that regenerating it without touching anything does not silently remove fields
+        /// (which would break the animation clips that are bound to those field names).
+        /// </summary>
+        private void InitializeParameterList()
+        {
+            foreach (var volumeComponentInfo in volumeComponentInfoList) {
+                var parameterFieldInfoList =
+                    AnimatableVolumeComponentCodeGenerator.FindParameters(volumeComponentInfo.VolumeComponentType);
+
+                // already generated: check only the parameters that exist in the generated class
+                // not generated yet: null, which means "check them all"
+                var generatedParameterNames = volumeComponentInfo.AnimatableComponentType != null
+                    ? AnimatableVolumeComponentCodeGenerator.GetGeneratedParameterNames(
+                        volumeComponentInfo.AnimatableComponentType)
+                    : null;
+
+                volumeComponentInfo.SetParameters(parameterFieldInfoList, generatedParameterNames);
+            }
         }
 
         /// <summary>
@@ -92,7 +120,48 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 itemInfo.SetUIVolumeComponentLabel(item.Q<Label>("VcName"));
                 itemInfo.SetUIHasAcImage(item.Q<Image>("IsAnimatable"));
                 itemInfo.SetUIAnimatableComponentLabel(item.Q<Label>("AcName"));
+
+                var paramParent = item.Q("ParamParent");
+                itemInfo.SetUIFoldout(item.Q<Label>("FoldoutArrow"), paramParent);
+
+                // parameter rows are all created here, and just hidden until the row is expanded
+                foreach (var parameterInfo in itemInfo.ParameterList) {
+                    paramParent.Add(CreateParameterRow(parameterInfo));
+                }
+                // the rows exist only now, so the initial enabled state has to be applied here
+                itemInfo.RefreshParameterEnabled();
             }
+        }
+
+        /// <summary>
+        /// Create one VolumeParameter row (a toggle and its name).
+        /// </summary>
+        private VisualElement CreateParameterRow(VolumeParameterInfoItem parameterInfo)
+        {
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.height = 16f;
+            row.style.flexShrink = 0f;
+            row.style.marginLeft = 32f; // indent by the foldout arrow (16px) and the check toggle (16px)
+
+            var toggle = new Toggle();
+            toggle.style.width = 16f;
+            toggle.style.minWidth = 16f;
+            toggle.style.maxWidth = 16f;
+
+            var label = new Label(parameterInfo.ParameterName);
+            label.style.unityTextAlign = TextAnchor.MiddleLeft;
+            label.style.paddingLeft = 3f;
+            if (parameterInfo.FieldInfo.isNonAnimatableType) {
+                // only the override state can be generated for these; the value is not animatable
+                label.text += "  (override only)";
+            }
+
+            row.Add(toggle);
+            row.Add(label);
+            parameterInfo.row = row;
+            parameterInfo.SetUICheckToggle(toggle);
+            return row;
         }
 
         /// <summary>
@@ -113,6 +182,14 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             var selectAllBtn = treeRoot.Q<Button>("SelectAllButton");
             selectAllBtn.clicked += SelectAll;
             selectAllBtn.text = isJapanese ? "全て選択" : "Select All";
+
+            var expandAllBtn = treeRoot.Q<Button>("ExpandAllButton");
+            expandAllBtn.clicked += () => SetAllExpanded(true);
+            expandAllBtn.text = isJapanese ? "全て展開" : "Expand All";
+
+            var collapseAllBtn = treeRoot.Q<Button>("CollapseAllButton");
+            collapseAllBtn.clicked += () => SetAllExpanded(false);
+            collapseAllBtn.text = isJapanese ? "全て折りたたむ" : "Collapse All";
 
             var generateBtn = treeRoot.Q<Button>("GenerateButton");
             generateBtn.clicked += GenerateCode;
@@ -140,6 +217,13 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             }
         }
 
+        private void SetAllExpanded(bool isExpanded)
+        {
+            foreach (var item in volumeComponentInfoList) {
+                item.SetExpanded(isExpanded);
+            }
+        }
+
         /// <summary>
         /// Generate AnimatableVolumeComponent code.
         /// </summary>
@@ -148,7 +232,8 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             List<Type> generatedVolumeComponentList = new();
             foreach (var item in volumeComponentInfoList) {
                 if (item.IsChecked) {
-                    AnimatableVolumeComponentCodeGenerator.GenerateVolumeComponentHelperCode(item.VolumeComponentType);
+                    AnimatableVolumeComponentCodeGenerator.GenerateVolumeComponentHelperCode(
+                        item.VolumeComponentType, item.GetSelectedParameterNames());
                     generatedVolumeComponentList.Add(item.VolumeComponentType);
                 }
             }
@@ -184,15 +269,24 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             private static readonly GUIContent okIcon = EditorGUIUtility.IconContent("TestPassed");
 
             // data
-            public bool IsChecked => checkedToggle.value;
+            /// <summary>
+            /// Whether to generate this VolumeComponent in this run. <br/>
+            /// This is independent from the parameter check states; checking a parameter does not check this,
+            /// and checking this does not change the parameters.
+            /// </summary>
+            public bool IsChecked { get; private set; }
+            public bool IsExpanded { get; private set; }
             public Type VolumeComponentType { get; private set; }
             public Type AnimatableComponentType { get; private set; }
+            public List<VolumeParameterInfoItem> ParameterList { get; private set; } = new();
 
             // ui
             public Toggle checkedToggle;
             public Label vcLabel;
             public Image hasAcImage;
             public Label acLabel;
+            public Label foldoutArrowLabel;
+            public VisualElement parameterParent;
 
             public VolumeComponentInfoItem(Type volumeComponentType)
             {
@@ -201,7 +295,70 @@ namespace TsukimiNeko.AnimatableVolumeComponent
 
             public void SetIsChecked(bool isChecked)
             {
-                checkedToggle.value = isChecked;
+                IsChecked = isChecked;
+                checkedToggle?.SetValueWithoutNotify(isChecked);
+                RefreshParameterEnabled();
+            }
+
+            /// <summary>
+            /// Set the VolumeParameter list, and decide the initial check state of each parameter.
+            /// </summary>
+            /// <param name="parameterFieldInfoList">parameters found in the VolumeComponent</param>
+            /// <param name="generatedParameterNames">
+            /// Parameters contained in the already generated AnimatableVolumeComponent.
+            /// Pass null if it is not generated yet, then all parameters are checked.
+            /// </param>
+            public void SetParameters(
+                List<AnimatableVolumeComponentCodeGenerator.VolumeParameterFieldInfo> parameterFieldInfoList,
+                HashSet<string> generatedParameterNames)
+            {
+                ParameterList = parameterFieldInfoList
+                    .Select(fieldInfo =>
+                    {
+                        var isGenerated = generatedParameterNames != null
+                            && generatedParameterNames.Contains(fieldInfo.helperFieldName);
+                        // not generated yet: check them all. already generated: check what is in the generated class
+                        var isChecked = generatedParameterNames == null || isGenerated;
+                        return new VolumeParameterInfoItem(fieldInfo, isChecked, isGenerated);
+                    })
+                    .ToList();
+            }
+
+            /// <summary>
+            /// Number of VolumeParameters that are contained in the generated AnimatableVolumeComponent.
+            /// </summary>
+            public int GeneratedParameterCount => ParameterList.Count(parameter => parameter.IsGenerated);
+
+            /// <summary>
+            /// The parameter toggles can only be edited when this VolumeComponent is checked.
+            /// </summary>
+            public void RefreshParameterEnabled()
+            {
+                foreach (var parameter in ParameterList) {
+                    // disable the row, not the toggle, so that the parameter name is grayed out too
+                    parameter.row?.SetEnabled(IsChecked);
+                }
+            }
+
+            public HashSet<string> GetSelectedParameterNames()
+            {
+                return ParameterList.Where(parameter => parameter.IsChecked)
+                    .Select(parameter => parameter.ParameterName)
+                    .ToHashSet();
+            }
+
+            public void SetExpanded(bool isExpanded)
+            {
+                // a VolumeComponent without any parameter has nothing to expand
+                if (ParameterList.Count == 0) isExpanded = false;
+
+                IsExpanded = isExpanded;
+                if (foldoutArrowLabel != null) {
+                    foldoutArrowLabel.text = isExpanded ? "▼" : "▶";
+                }
+                if (parameterParent != null) {
+                    parameterParent.style.display = isExpanded ? DisplayStyle.Flex : DisplayStyle.None;
+                }
             }
 
             public void SetAnimatableComponentType(Type animatableComponentType)
@@ -212,15 +369,48 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 }
 
                 if (acLabel != null) {
-                    acLabel.text = AnimatableComponentType != null ? AnimatableComponentType.Name : "";
+                    acLabel.text = GetAnimatableComponentLabelText();
                 }
+            }
+
+            /// <summary>
+            /// Name of the generated AnimatableVolumeComponent, with how many VolumeParameters it contains.
+            /// </summary>
+            private string GetAnimatableComponentLabelText()
+            {
+                if (AnimatableComponentType == null) return "";
+
+                return $"{AnimatableComponentType.Name}  ({GeneratedParameterCount}/{ParameterList.Count})";
             }
 
             // ui
             public void SetUICheckToggle(Toggle toggle)
             {
                 checkedToggle = toggle;
-                toggle.value = IsChecked;
+                toggle.SetValueWithoutNotify(IsChecked);
+                toggle.RegisterValueChangedCallback(evt =>
+                {
+                    IsChecked = evt.newValue;
+                    RefreshParameterEnabled();
+                });
+            }
+
+            public void SetUIFoldout(Label arrowLabel, VisualElement paramParent)
+            {
+                foldoutArrowLabel = arrowLabel;
+                parameterParent = paramParent;
+
+                if (ParameterList.Count == 0) {
+                    // keep the layout, but there is nothing to expand
+                    arrowLabel.style.visibility = Visibility.Hidden;
+                }
+                else {
+                    // PointerDownEvent instead of ClickEvent: a plain Label has no Clickable manipulator,
+                    // and reacting on press is how the built-in Foldout arrow behaves anyway
+                    arrowLabel.RegisterCallback<PointerDownEvent>(_ => SetExpanded(!IsExpanded));
+                }
+
+                SetExpanded(IsExpanded);
             }
 
             public void SetUIVolumeComponentLabel(Label label)
@@ -238,7 +428,55 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             public void SetUIAnimatableComponentLabel(Label label)
             {
                 acLabel = label;
-                label.text = AnimatableComponentType?.Name;
+                label.text = GetAnimatableComponentLabelText();
+            }
+        }
+
+        /// <summary>
+        /// helper class to contain information of a VolumeParameter and its UI.
+        /// </summary>
+        public class VolumeParameterInfoItem
+        {
+            // data
+            /// <summary>
+            /// Whether to generate this VolumeParameter.
+            /// </summary>
+            public bool IsChecked { get; private set; }
+            /// <summary>
+            /// Whether this VolumeParameter is already contained in the generated AnimatableVolumeComponent.
+            /// Unlike <see cref="IsChecked"/>, this does not change when the user toggles the checkbox.
+            /// </summary>
+            public bool IsGenerated { get; private set; }
+            public AnimatableVolumeComponentCodeGenerator.VolumeParameterFieldInfo FieldInfo { get; private set; }
+
+            public string ParameterName => FieldInfo.helperFieldName;
+
+            // ui
+            public VisualElement row;
+            public Toggle checkedToggle;
+
+            public VolumeParameterInfoItem(
+                AnimatableVolumeComponentCodeGenerator.VolumeParameterFieldInfo fieldInfo,
+                bool isChecked,
+                bool isGenerated)
+            {
+                FieldInfo = fieldInfo;
+                IsChecked = isChecked;
+                IsGenerated = isGenerated;
+            }
+
+            public void SetIsChecked(bool isChecked)
+            {
+                IsChecked = isChecked;
+                checkedToggle?.SetValueWithoutNotify(isChecked);
+            }
+
+            // ui
+            public void SetUICheckToggle(Toggle toggle)
+            {
+                checkedToggle = toggle;
+                toggle.SetValueWithoutNotify(IsChecked);
+                toggle.RegisterValueChangedCallback(evt => IsChecked = evt.newValue);
             }
         }
     }

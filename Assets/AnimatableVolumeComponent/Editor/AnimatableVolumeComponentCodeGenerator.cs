@@ -25,6 +25,12 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         }
 
         /// <summary>
+        /// Prefix of the generated "override state" field. This is a contract between the generated code and
+        /// AnimatableVolumeComponentBaseEditor.
+        /// </summary>
+        public const string OverridePrefix = "override_";
+
+        /// <summary>
         /// Types that can't be animated (due to technical limitations)
         /// </summary>
         private static readonly string[] NonAnimatableTypeNames = new[]
@@ -36,7 +42,11 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         /// Generate AnimatableVolumeComponent for the given VolumeComponent type.
         /// </summary>
         /// <param name="type">VolumeComponent type</param>
-        public static void GenerateVolumeComponentHelperCode(Type type)
+        /// <param name="selectedParameterNames">
+        /// Names of the VolumeParameters to generate (<see cref="VolumeParameterFieldInfo.helperFieldName"/>).
+        /// Pass null to generate all of them.
+        /// </param>
+        public static void GenerateVolumeComponentHelperCode(Type type, ICollection<string> selectedParameterNames = null)
         {
             var vcType = typeof(VolumeComponent);
             if (!vcType.IsAssignableFrom(type)) {
@@ -44,8 +54,12 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 return;
             }
 
-            var fieldInfoList = new List<VolumeParameterFieldInfo>();
-            FindParameters(type, ref fieldInfoList);
+            var fieldInfoList = FindParameters(type);
+            if (selectedParameterNames != null) {
+                fieldInfoList = fieldInfoList
+                    .Where(fieldInfo => selectedParameterNames.Contains(fieldInfo.helperFieldName))
+                    .ToList();
+            }
 
             var fieldIndent = "        ";
             var methodIndent = "            ";
@@ -66,26 +80,26 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 }
                 else if (fieldInfo.isNonAnimatableType) {
                     // override state only; we can't set the value of non animatable types
-                    fieldDeclareCode += $"{fieldIndent}public bool override_{fieldInfo.helperFieldName};\n";
+                    fieldDeclareCode += $"{fieldIndent}public bool {OverridePrefix}{fieldInfo.helperFieldName};\n";
                     readMethodCode +=
-                        $"{methodIndent}override_{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState;\n";
+                        $"{methodIndent}{OverridePrefix}{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState;\n";
                     writeMethodCode +=
-                        $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState = override_{fieldInfo.helperFieldName};\n";
+                        $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState = {OverridePrefix}{fieldInfo.helperFieldName};\n";
                     continue;
                 }
 
                 // normal code generation
                 // field definition
-                fieldDeclareCode += $"{fieldIndent}public bool override_{fieldInfo.helperFieldName};\n";
+                fieldDeclareCode += $"{fieldIndent}public bool {OverridePrefix}{fieldInfo.helperFieldName};\n";
                 fieldDeclareCode += $"{fieldIndent}public {GetFullName(fieldInfo.valueType)} {fieldInfo.helperFieldName};\n";
                 // read from profile
                 readMethodCode +=
-                    $"{methodIndent}override_{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState;\n";
+                    $"{methodIndent}{OverridePrefix}{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState;\n";
                 readMethodCode +=
                     $"{methodIndent}{fieldInfo.helperFieldName} = volumeComponent.{fieldInfo.volumeComponentFieldName}.value;\n";
                 // write to profile
                 writeMethodCode +=
-                    $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState = override_{fieldInfo.helperFieldName};\n";
+                    $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName}.overrideState = {OverridePrefix}{fieldInfo.helperFieldName};\n";
                 writeMethodCode +=
                     $"{methodIndent}volumeComponent.{fieldInfo.volumeComponentFieldName}.value = {fieldInfo.helperFieldName};\n";
             }
@@ -158,12 +172,16 @@ namespace TsukimiNeko.AnimatableVolumeComponent
         }
 
         /// <summary>
-        /// One-layer-only VolumeParameter field searching
+        /// One-layer-only VolumeParameter field searching. <br/>
+        /// This is the single source of the parameter list; the wizard uses it to show the parameter toggles,
+        /// so the order here also decides the order of the generated fields.
         /// </summary>
         /// <param name="targetVolumeComponentType"></param>
-        /// <param name="parameterFieldList"></param>
-        private static void FindParameters(Type targetVolumeComponentType, ref List<VolumeParameterFieldInfo> parameterFieldList)
+        /// <returns>found VolumeParameter fields, in declaration order</returns>
+        public static List<VolumeParameterFieldInfo> FindParameters(Type targetVolumeComponentType)
         {
+            var parameterFieldList = new List<VolumeParameterFieldInfo>();
+
             // also search for NonPublic fields; if there is corresponding public property, we can use it
             var fields = targetVolumeComponentType
                 .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
@@ -178,6 +196,9 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                 if (field.GetCustomAttribute<ObsoleteAttribute>() != null) continue;
 
                 var parameterValueType = GetVolumeParameterValueType(field.FieldType);
+                // not derived from VolumeParameter<T>; we can't know the value type
+                if (parameterValueType == null) continue;
+
                 var volumeComponentMemberName = field.Name;
                 if (field.IsPublic == false) {
                     if (TryFindCorrespondingProperty(field, parameterValueType, properties, out var property)) {
@@ -198,6 +219,34 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                     isNonAnimatableType = NonAnimatableTypeNames.Contains(parameterValueType.Name),
                 });
             }
+
+            return parameterFieldList;
+        }
+
+        /// <summary>
+        /// Find which VolumeParameters are contained in an already generated AnimatableVolumeComponent,
+        /// by looking at its fields. <br/>
+        /// Note that a parameter may be generated as "override_xxx" only (non animatable type) or as "xxx" only
+        /// (VolumeComponent property), so both forms count as "contained".
+        /// </summary>
+        /// <param name="animatableComponentType">generated AnimatableVolumeComponent type</param>
+        /// <returns>contained VolumeParameter names</returns>
+        public static HashSet<string> GetGeneratedParameterNames(Type animatableComponentType)
+        {
+            var parameterNames = new HashSet<string>();
+            if (animatableComponentType == null) return parameterNames;
+
+            // DeclaredOnly: we only want the generated fields, not "active" etc. of the base class
+            var fields = animatableComponentType
+                .GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            foreach (var field in fields) {
+                var parameterName = field.Name;
+                if (parameterName.StartsWith(OverridePrefix)) {
+                    parameterName = parameterName.Substring(OverridePrefix.Length);
+                }
+                parameterNames.Add(parameterName);
+            }
+            return parameterNames;
         }
 
         /// <summary>
