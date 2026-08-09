@@ -57,6 +57,15 @@ Animatable Volume Component 以下の特徴があります：
 
 <br/>
 
+> [!TIP]
+> **生成するパラメータを選ぶ**
+>
+> `VolumeComponent` 名のところ（または左の ▶）を押すとパラメータの一覧が展開され、**生成するパラメータを個別に選択**できます。使わないパラメータのチェックを外しておくと、生成される補助コンポーネントがすっきりします。
+>
+> オレンジ色で表示されるパラメータは非 public です。非 public のパラメータは、開始時に Reflection で `VolumeParameter` を取得・キャッシュして書き込みます。Reflection を使いたくない場合は、［public のパラメータを選択］ボタンで public のパラメータのみに絞ってください。
+
+<br/>
+
 ## 1. 補助コンポーネントのアタッチ
 
 アニメーションをさせたい `Volume` のゲームオブジェクトに、`Animator` 及び `AnimatableVolumeHelper` をアタッチします。

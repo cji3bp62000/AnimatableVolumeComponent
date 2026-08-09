@@ -1,8 +1,12 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <ui:VisualElement name="ListItem" style="flex-direction: row; height: 18px;">
-        <ui:Toggle name="Check" style="width: 16px; max-width: 16px; min-width: 16px;" />
-        <ui:Label display-tooltip-when-elided="true" name="VcName" style="width: 200px; flex-shrink: 1; -unity-text-align: middle-left; padding-left: 3px;" />
-        <ui:Image name="IsAnimatable" style="width: 22px; min-width: 22px; max-width: 22px; -unity-background-scale-mode: scale-to-fit; padding-top: 1px; padding-bottom: 1px;" />
-        <ui:Label display-tooltip-when-elided="true" name="AcName" style="width: 200px; flex-shrink: 1; -unity-text-align: middle-left; padding-left: 3px;" />
+    <ui:VisualElement name="ListItem" style="flex-direction: column; flex-shrink: 0;">
+        <ui:VisualElement name="MainRow" style="flex-direction: row; height: 18px; flex-shrink: 0;">
+            <ui:Label text="▶" name="FoldoutArrow" style="width: 16px; min-width: 16px; max-width: 16px; -unity-text-align: middle-center; margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0;" />
+            <ui:Toggle name="Check" style="width: 16px; max-width: 16px; min-width: 16px;" />
+            <ui:Label display-tooltip-when-elided="true" name="VcName" style="width: 200px; flex-shrink: 1; -unity-text-align: middle-left; padding-left: 3px;" />
+            <ui:Image name="IsAnimatable" style="width: 22px; min-width: 22px; max-width: 22px; -unity-background-scale-mode: scale-to-fit; padding-top: 1px; padding-bottom: 1px;" />
+            <ui:Label display-tooltip-when-elided="true" name="AcName" style="width: 260px; flex-shrink: 1; -unity-text-align: middle-left; padding-left: 3px;" />
+        </ui:VisualElement>
+        <ui:VisualElement name="ParamParent" style="flex-shrink: 0; display: none;" />
     </ui:VisualElement>
 </ui:UXML>

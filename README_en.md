@@ -46,6 +46,15 @@ Check the `VolumeComponent` you want to animate and press the Generate button to
 
 <br/>
 
+> [!TIP]
+> **choosing which parameters to generate**
+>
+> Press a `VolumeComponent` name (or the ▶ arrow next to it) to expand its parameter list, where you can **select the parameters to generate individually**. Unchecking the parameters you don't need keeps the generated helper component small.
+>
+> Parameters shown in orange are non-public. They are written through a `VolumeParameter` that is resolved by reflection and cached at start. If you would rather not use reflection, press the ［Select Public Parameters］ button to narrow the selection down to the public parameters only.
+
+<br/>
+
 ## 1. Attach helper components to the Volume GameObject
 
 Attach `Animator` and `AnimatableVolumeHelper` component to the `Volume` game object to be animated.

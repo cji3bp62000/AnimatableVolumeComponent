@@ -31,6 +31,7 @@ namespace TsukimiNeko.AnimatableVolumeComponent
             Map[typeof(UnityEngine.Rendering.Universal.Tonemapping)] = typeof(TsukimiNeko.AnimatableVolumeComponent.AnimatableTonemapping);
             Map[typeof(UnityEngine.Rendering.Universal.Vignette)] = typeof(TsukimiNeko.AnimatableVolumeComponent.AnimatableVignette);
             Map[typeof(UnityEngine.Rendering.Universal.WhiteBalance)] = typeof(TsukimiNeko.AnimatableVolumeComponent.AnimatableWhiteBalance);
+
         }
     }
 }
