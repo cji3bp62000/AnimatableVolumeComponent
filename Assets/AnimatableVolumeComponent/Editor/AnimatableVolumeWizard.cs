@@ -483,19 +483,31 @@ namespace TsukimiNeko.AnimatableVolumeComponent
                     // keep the layout, but there is nothing to expand
                     arrowLabel.style.visibility = Visibility.Hidden;
                 }
-                else {
-                    // PointerDownEvent instead of ClickEvent: a plain Label has no Clickable manipulator,
-                    // and reacting on press is how the built-in Foldout arrow behaves anyway
-                    arrowLabel.RegisterCallback<PointerDownEvent>(_ => SetExpanded(!IsExpanded));
-                }
+                RegisterFoldoutToggle(arrowLabel);
 
                 SetExpanded(IsExpanded);
+            }
+
+            /// <summary>
+            /// Make pressing the element toggle the foldout. <br/>
+            /// Both the arrow and the VolumeComponent name column use this, so the whole left side of the row
+            /// behaves like one foldout header.
+            /// </summary>
+            private void RegisterFoldoutToggle(VisualElement element)
+            {
+                // a VolumeComponent without any parameter has nothing to expand
+                if (ParameterList.Count == 0) return;
+
+                // PointerDownEvent instead of ClickEvent: a plain Label has no Clickable manipulator,
+                // and reacting on press is how the built-in Foldout arrow behaves anyway
+                element.RegisterCallback<PointerDownEvent>(_ => SetExpanded(!IsExpanded));
             }
 
             public void SetUIVolumeComponentLabel(Label label)
             {
                 vcLabel = label;
                 label.text = VolumeComponentType.Name;
+                RegisterFoldoutToggle(label);
             }
 
             public void SetUIHasAcImage(Image image)
